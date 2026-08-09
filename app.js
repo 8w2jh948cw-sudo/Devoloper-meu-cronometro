@@ -891,102 +891,238 @@ async function init(){
 init().catch(err=>{console.error(err);$app.innerHTML=`<main class="content"><h1>Erro ao abrir o aplicativo</h1><pre>${esc(err.message)}</pre></main>`;});
 
 
-/* === Developer controls: bottom tab bar === */
-(function(){
-  const DEV_TABBAR_KEY = "dev_tabbar_controls_v051";
+
+
+/* === v0.5.2: version + bottom tabbar developer controls === */
+const APP_VERSION = "0.5.2";
+const VERSION_BADGE_KEY = "show_version_badge";
+const DEV_TABBAR_KEY_V052 = "dev_tabbar_controls_v052";
+
+function getDevTabbarCfg() {
   const defaults = {
     iconColor:"#6E6E73",
     iconSize:25,
     textColor:"#6E6E73",
     textSize:10.5,
     showLabels:true,
-    borderColor:"rgba(255,255,255,.72)",
+    borderColor:"#FFFFFF",
     borderWidth:1
   };
-
-  function loadCfg(){
-    try { return Object.assign({}, defaults, JSON.parse(localStorage.getItem(DEV_TABBAR_KEY)||"{}")); }
-    catch(e){ return {...defaults}; }
+  try {
+    return Object.assign({}, defaults, JSON.parse(localStorage.getItem(DEV_TABBAR_KEY_V052) || "{}"));
+  } catch(e) {
+    return defaults;
   }
-  function saveCfg(c){ localStorage.setItem(DEV_TABBAR_KEY, JSON.stringify(c)); }
-  function applyCfg(){
-    const c=loadCfg(), root=document.documentElement, bar=document.querySelector(".tabbar");
-    root.style.setProperty("--tabbar-icon-color", c.iconColor);
-    root.style.setProperty("--tabbar-icon-size", c.iconSize+"px");
-    root.style.setProperty("--tabbar-text-color", c.textColor);
-    root.style.setProperty("--tabbar-text-size", c.textSize+"px");
-    root.style.setProperty("--tabbar-border-color", c.borderColor);
-    root.style.setProperty("--tabbar-border-width", c.borderWidth+"px");
-    document.querySelectorAll(".tabbar button").forEach(b=>{
-      if(!b.classList.contains("active")) b.style.color=c.iconColor;
-      const label=b.querySelector(".tab-label") || [...b.children].find(x=>!x.classList.contains("sf-icon"));
-      if(label) label.style.color=b.classList.contains("active") ? "" : c.textColor;
+}
+
+function saveDevTabbarCfg(cfg) {
+  localStorage.setItem(DEV_TABBAR_KEY_V052, JSON.stringify(cfg));
+}
+
+function applyDevTabbarCfg() {
+  const cfg = getDevTabbarCfg();
+  const root = document.documentElement;
+  root.style.setProperty("--tabbar-icon-color", cfg.iconColor);
+  root.style.setProperty("--tabbar-icon-size", cfg.iconSize + "px");
+  root.style.setProperty("--tabbar-text-color", cfg.textColor);
+  root.style.setProperty("--tabbar-text-size", cfg.textSize + "px");
+  root.style.setProperty("--tabbar-border-color", cfg.borderColor);
+  root.style.setProperty("--tabbar-border-width", cfg.borderWidth + "px");
+
+  document.querySelectorAll(".tabbar button").forEach(btn => {
+    btn.style.color = btn.classList.contains("active") ? "" : cfg.iconColor;
+    const labels = [...btn.children].filter(x => !x.classList.contains("sf-icon"));
+    labels.forEach(label => {
+      label.style.color = btn.classList.contains("active") ? "" : cfg.textColor;
     });
-    if(bar) bar.classList.toggle("hide-labels", !c.showLabels);
+  });
+
+  const bar = document.querySelector(".tabbar");
+  if (bar) bar.classList.toggle("hide-labels", !cfg.showLabels);
+}
+
+function ensureVersionBadge() {
+  let badge = document.getElementById("app-version-badge");
+  if (!badge) {
+    badge = document.createElement("div");
+    badge.id = "app-version-badge";
+    badge.className = "app-version-badge";
+    document.body.appendChild(badge);
+  }
+  badge.textContent = "v" + APP_VERSION;
+  const show = localStorage.getItem(VERSION_BADGE_KEY) === "1";
+  badge.hidden = !show;
+}
+
+function createDevStepper(value, step, onChange) {
+  const wrap = document.createElement("div");
+  wrap.className = "dev-inline-stepper";
+  const minus = document.createElement("button");
+  minus.type = "button";
+  minus.textContent = "−";
+  const input = document.createElement("input");
+  input.type = "number";
+  input.value = value;
+  input.step = step;
+  const plus = document.createElement("button");
+  plus.type = "button";
+  plus.textContent = "+";
+  const commit = v => {
+    input.value = v;
+    onChange(Number(v));
+  };
+  minus.onclick = () => commit((Number(input.value)||0)-step);
+  plus.onclick = () => commit((Number(input.value)||0)+step);
+  input.onchange = () => onChange(Number(input.value));
+  wrap.append(minus,input,plus);
+  return wrap;
+}
+
+function createDevRow(label, control, infoText) {
+  const row = document.createElement("div");
+  row.className = "dev-extra-row";
+  const left = document.createElement("div");
+  left.className = "dev-extra-label";
+  const txt = document.createElement("span");
+  txt.textContent = label;
+  left.appendChild(txt);
+  if (infoText) {
+    const info = document.createElement("button");
+    info.type = "button";
+    info.className = "dev-info-btn";
+    info.textContent = "ⓘ";
+    info.onclick = () => alert(infoText);
+    left.appendChild(info);
+  }
+  row.append(left, control);
+  return row;
+}
+
+function injectDevTabbarControls() {
+  const devRoot = document.querySelector("#developerView,.developer-page,[data-view='developer'],.dev-page");
+  if (!devRoot || devRoot.querySelector("#dev-tabbar-v052")) return;
+
+  // Try to find the existing "Barra inferior" editor/category first.
+  let host = [...devRoot.querySelectorAll("*")].find(el =>
+    el.children.length < 8 &&
+    /^Barra inferior$/i.test((el.textContent || "").trim())
+  );
+  if (host) {
+    host = host.closest(".settings-card,.dev-card,.editor-card,section") || host.parentElement;
+  } else {
+    host = devRoot.querySelector(".settings-list,.dev-settings,.settings-content") || devRoot;
   }
 
-  function row(label, control, info){
-    const wrap=document.createElement("div");
-    wrap.className="setting-row dev-extra-row";
-    wrap.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--separator,#e5e5ea)";
-    const left=document.createElement("div");
-    left.style.cssText="display:flex;align-items:center;gap:6px;min-width:0";
-    const t=document.createElement("span"); t.textContent=label; left.appendChild(t);
-    if(info){
-      const i=document.createElement("button"); i.type="button"; i.textContent="ⓘ";
-      i.style.cssText="border:0;background:transparent;color:var(--accent);font-size:15px;padding:2px";
-      i.onclick=()=>alert(info); left.appendChild(i);
-    }
-    wrap.append(left,control); return wrap;
-  }
-  function colorInput(value,onchange){
-    const i=document.createElement("input"); i.type="color";
-    // normalize rgba fallback to hex-ish
-    i.value=/^#[0-9a-f]{6}$/i.test(value)?value:"#6E6E73";
-    i.oninput=()=>onchange(i.value); return i;
-  }
-  function stepper(value, step, onchange){
-    const box=document.createElement("div"); box.style.cssText="display:flex;align-items:center;gap:6px";
-    const minus=document.createElement("button"); minus.textContent="−";
-    const input=document.createElement("input"); input.type="number"; input.value=value; input.step=step;
-    input.style.cssText="width:62px;text-align:center";
-    const plus=document.createElement("button"); plus.textContent="+";
-    const set=v=>{ input.value=v; onchange(Number(v)); };
-    minus.onclick=()=>set((Number(input.value)||0)-step);
-    plus.onclick=()=>set((Number(input.value)||0)+step);
-    input.onchange=()=>onchange(Number(input.value));
-    box.append(minus,input,plus); return box;
+  const card = document.createElement("section");
+  card.id = "dev-tabbar-v052";
+  card.className = "settings-card dev-tabbar-card";
+
+  if (!host.querySelector || !host.querySelector(".dev-tabbar-heading")) {
+    const heading = document.createElement("h3");
+    heading.className = "dev-tabbar-heading";
+    heading.textContent = "Barra inferior";
+    card.appendChild(heading);
   }
 
-  function inject(){
-    applyCfg();
-    const devRoot=document.querySelector("#developerView,.developer-page,[data-view='developer'],.dev-page");
-    if(!devRoot || devRoot.querySelector("#dev-tabbar-section")) return;
-    const host=devRoot.querySelector(".settings-list,.dev-settings,.settings-content") || devRoot;
-    const card=document.createElement("section");
-    card.id="dev-tabbar-section";
-    card.className="settings-card";
-    card.style.marginTop="16px";
-    const h=document.createElement("h3"); h.textContent="Barra inferior";
-    h.style.cssText="margin:0 0 6px;padding:14px 14px 4px";
-    card.appendChild(h);
+  const cfg = getDevTabbarCfg();
 
-    const c=loadCfg();
-    card.append(
-      row("Cor dos ícones", colorInput(c.iconColor,v=>{c.iconColor=v;saveCfg(c);applyCfg();})),
-      row("Tamanho dos ícones", stepper(c.iconSize,1,v=>{c.iconSize=v;saveCfg(c);applyCfg();}), "Altera o tamanho dos ícones da navegação inferior."),
-      row("Cor do texto", colorInput(c.textColor,v=>{c.textColor=v;saveCfg(c);applyCfg();})),
-      row("Tamanho do texto", stepper(c.textSize,.5,v=>{c.textSize=v;saveCfg(c);applyCfg();})),
-      row("Cor da borda", colorInput(c.borderColor,v=>{c.borderColor=v;saveCfg(c);applyCfg();})),
-      row("Espessura da borda", stepper(c.borderWidth,.5,v=>{c.borderWidth=Math.max(0,v);saveCfg(c);applyCfg();}), "Controla a espessura do contorno externo da barra."),
-    );
-    const toggle=document.createElement("input"); toggle.type="checkbox"; toggle.checked=c.showLabels;
-    toggle.onchange=()=>{c.showLabels=toggle.checked;saveCfg(c);applyCfg();};
-    card.append(row("Mostrar títulos das abas",toggle,"Quando desativado, os títulos somem e os ícones são centralizados automaticamente."));
+  const iconColor = document.createElement("input");
+  iconColor.type = "color";
+  iconColor.value = /^#[0-9A-F]{6}$/i.test(cfg.iconColor) ? cfg.iconColor : "#6E6E73";
+  iconColor.setAttribute("aria-label","Cor dos ícones");
+  iconColor.oninput = () => {
+    cfg.iconColor = iconColor.value;
+    saveDevTabbarCfg(cfg);
+    applyDevTabbarCfg();
+  };
+
+  const textColor = document.createElement("input");
+  textColor.type = "color";
+  textColor.value = /^#[0-9A-F]{6}$/i.test(cfg.textColor) ? cfg.textColor : "#6E6E73";
+  textColor.oninput = () => {
+    cfg.textColor = textColor.value;
+    saveDevTabbarCfg(cfg);
+    applyDevTabbarCfg();
+  };
+
+  const borderColor = document.createElement("input");
+  borderColor.type = "color";
+  borderColor.value = /^#[0-9A-F]{6}$/i.test(cfg.borderColor) ? cfg.borderColor : "#FFFFFF";
+  borderColor.oninput = () => {
+    cfg.borderColor = borderColor.value;
+    saveDevTabbarCfg(cfg);
+    applyDevTabbarCfg();
+  };
+
+  const labelsToggle = document.createElement("input");
+  labelsToggle.type = "checkbox";
+  labelsToggle.checked = !!cfg.showLabels;
+  labelsToggle.onchange = () => {
+    cfg.showLabels = labelsToggle.checked;
+    saveDevTabbarCfg(cfg);
+    applyDevTabbarCfg();
+  };
+
+  card.append(
+    createDevRow("Cor dos ícones", iconColor, "Define a cor dos ícones das abas não selecionadas."),
+    createDevRow("Tamanho dos ícones", createDevStepper(cfg.iconSize,1,v=>{cfg.iconSize=Math.max(8,v);saveDevTabbarCfg(cfg);applyDevTabbarCfg();}), "Altera o tamanho dos ícones da navegação inferior."),
+    createDevRow("Cor do texto", textColor, "Define a cor dos títulos das abas não selecionadas."),
+    createDevRow("Tamanho do texto", createDevStepper(cfg.textSize,0.5,v=>{cfg.textSize=Math.max(6,v);saveDevTabbarCfg(cfg);applyDevTabbarCfg();})),
+    createDevRow("Cor da borda", borderColor, "Define a cor do contorno externo da barra inferior."),
+    createDevRow("Espessura da borda", createDevStepper(cfg.borderWidth,0.5,v=>{cfg.borderWidth=Math.max(0,v);saveDevTabbarCfg(cfg);applyDevTabbarCfg();})),
+    createDevRow("Mostrar títulos das abas", labelsToggle, "Se desligado, os textos desaparecem e os ícones ficam centralizados automaticamente.")
+  );
+
+  // Put controls inside the existing category if found; otherwise append to dev root.
+  if (host && host !== devRoot && host.classList.contains("settings-card")) {
+    host.appendChild(card);
+  } else {
     host.appendChild(card);
   }
+}
 
-  document.addEventListener("click",()=>setTimeout(inject,0),true);
-  document.addEventListener("DOMContentLoaded",()=>{applyCfg();setTimeout(inject,100);});
-  setInterval(()=>{applyCfg();inject();},1500);
-})();
+function injectSettingsVersionToggle() {
+  const settingsRoot = document.querySelector("#settingsView,.settings-page,[data-view='settings']");
+  if (!settingsRoot || settingsRoot.querySelector("#version-badge-toggle-row")) return;
+  const host = settingsRoot.querySelector(".settings-list,.settings-content") || settingsRoot;
+
+  const row = document.createElement("div");
+  row.id = "version-badge-toggle-row";
+  row.className = "setting-row";
+  row.innerHTML = '<div><div class="setting-title">Mostrar versão no topo</div><div class="setting-subtitle">Exibe uma etiqueta pequena com o número da versão atual.</div></div>';
+
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.checked = localStorage.getItem(VERSION_BADGE_KEY) === "1";
+  toggle.onchange = () => {
+    localStorage.setItem(VERSION_BADGE_KEY, toggle.checked ? "1" : "0");
+    ensureVersionBadge();
+  };
+  row.appendChild(toggle);
+  host.appendChild(row);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureVersionBadge();
+  applyDevTabbarCfg();
+  setTimeout(() => {
+    injectDevTabbarControls();
+    injectSettingsVersionToggle();
+  }, 100);
+});
+
+document.addEventListener("click", () => {
+  setTimeout(() => {
+    ensureVersionBadge();
+    applyDevTabbarCfg();
+    injectDevTabbarControls();
+    injectSettingsVersionToggle();
+  }, 0);
+}, true);
+
+setInterval(() => {
+  ensureVersionBadge();
+  applyDevTabbarCfg();
+  injectDevTabbarControls();
+  injectSettingsVersionToggle();
+}, 1200);
