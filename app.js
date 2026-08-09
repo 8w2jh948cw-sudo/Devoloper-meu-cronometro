@@ -1,5 +1,56 @@
 'use strict';
 
+/* === factory initial data v0.5.1 === */
+const FACTORY_INITIAL_DATA = {"schemaVersion": 2, "models": [{"id": "364a3d6e-de98-484c-ad4f-68de8f8b00cf", "name": "Manutenção", "createdAt": 1786222772945, "updatedAt": 1786223256201, "deletedAt": null, "timers": [{"id": "7f99cafe-c70c-4750-9506-bd26592ba670", "name": "Remoção", "symbol": " ", "iconColor": "#007aff", "order": 0, "createdAt": 1786222849436, "removedAt": null}, {"id": "be165d11-0a07-46a0-bfdc-4b74ec3b7ea5", "name": "Levantamento de cutícula", "symbol": " ", "iconColor": "#007aff", "order": 1, "createdAt": 1786222936686, "removedAt": null}, {"id": "7d55058a-3a47-49cb-a80e-ff109ee29c48", "name": "Corte da cutícula", "symbol": " ", "iconColor": "#007aff", "order": 2, "createdAt": 1786222963610, "removedAt": null}, {"id": "93e6983c-ec54-4835-be8c-8a5a7ab08f7d", "name": "2º Levantamento", "symbol": " ", "iconColor": "#007aff", "order": 3, "createdAt": 1786223122984, "removedAt": null}, {"id": "8ee93d10-6ca8-4c84-aac9-57bcffb877bb", "name": "Primer + Capa base", "symbol": " ", "iconColor": "#007aff", "order": 4, "createdAt": 1786223163495, "removedAt": null}, {"id": "dcd89381-cca3-4be2-b130-7328a21fe0fc", "name": "Estrutura", "symbol": " ", "iconColor": "#007aff", "order": 5, "createdAt": 1786223198958, "removedAt": null}, {"id": "070be45f-bc6f-4d67-a1b8-c9407e8eb711", "name": "Lixamento", "symbol": " ", "iconColor": "#007aff", "order": 6, "createdAt": 1786223210317, "removedAt": null}, {"id": "d3e3dbdc-1a57-4f4a-81cd-8334c85f9aee", "name": "Esmaltação", "symbol": " ", "iconColor": "#007aff", "order": 7, "createdAt": 1786223222787, "removedAt": null}, {"id": "af356cee-e4a7-4fb7-b9f1-a3e23c9f0df2", "name": "Top Coat", "symbol": " ", "iconColor": "#007aff", "order": 8, "createdAt": 1786223243057, "removedAt": null}, {"id": "e5075801-ab4f-4a74-8796-93247991df7c", "name": "Encerramento", "symbol": " ", "iconColor": "#007aff", "order": 9, "createdAt": 1786223256201, "removedAt": null}], "sortOrder": 0}]};
+const FACTORY_INIT_KEY = "cronometro_factory_initialized_v051";
+
+function ensureFactoryInitialData() {
+  try {
+    if (localStorage.getItem(FACTORY_INIT_KEY) === "1") return;
+    const likelyKeys = Object.keys(localStorage);
+    const hasExistingAppData = likelyKeys.some(k =>
+      /cronometro|models|sessions|timer/i.test(k) &&
+      localStorage.getItem(k) &&
+      localStorage.getItem(k) !== "[]" &&
+      localStorage.getItem(k) !== "{}"
+    );
+    if (!hasExistingAppData) {
+      // Try known app state patterns. This function intentionally seeds only models.
+      const model = FACTORY_INITIAL_DATA.models[0];
+      let seeded = false;
+
+      // Common direct models key.
+      for (const key of ["models","cronometro_models","timer_models"]) {
+        if (localStorage.getItem(key) === null) {
+          localStorage.setItem(key, JSON.stringify([model]));
+          seeded = true;
+          break;
+        }
+      }
+
+      // If app uses a single state object, merge model without sessions.
+      if (!seeded) {
+        const stateKey = likelyKeys.find(k => /state|data|store/i.test(k));
+        if (stateKey) {
+          try {
+            const st = JSON.parse(localStorage.getItem(stateKey) || "{}");
+            if (st && typeof st === "object" && (!Array.isArray(st.models) || st.models.length === 0)) {
+              st.models = [model];
+              localStorage.setItem(stateKey, JSON.stringify(st));
+              seeded = true;
+            }
+          } catch(e) {}
+        }
+      }
+    }
+    localStorage.setItem(FACTORY_INIT_KEY, "1");
+  } catch(e) {
+    console.warn("Falha ao inicializar dados de fábrica", e);
+  }
+}
+ensureFactoryInitialData();
+
+
 const DB_NAME = 'cronometro_local_v1';
 const DB_VERSION = 1;
 const $app = document.getElementById('app');
@@ -352,7 +403,7 @@ function renderStats(){
 function renderSettings(){
   const presets=devDesign.themePresets||[];
   const customSelected=data.settings.colorTheme==='custom';
-  return shell(`<header class="topbar simple"><h1>Ajustes</h1></header><main class="settings-content"><h2 class="settings-title">Ajustes</h2>
+  return shell(`<header class="topbar simple"><h1>Ajustes</h1></header><main class="settings-content">
     <section class="settings-section"><div class="settings-card">
       <label class="settings-row" for="themeSelect"><span>Aparência</span><span class="select-wrap"><select id="themeSelect"><option value="system" ${data.settings.theme==='system'?'selected':''}>Sistema</option><option value="light" ${data.settings.theme==='light'?'selected':''}>Claro</option><option value="dark" ${data.settings.theme==='dark'?'selected':''}>Escuro</option></select><span class="chevrons">${svgIcon('chevrons')}</span></span></label>
       <label class="settings-row" for="layoutSelect"><span>Layout dos cartões</span><span class="select-wrap"><select id="layoutSelect"><option value="lateral" ${data.settings.cardLayout==='lateral'?'selected':''}>Lateral</option><option value="central" ${data.settings.cardLayout==='central'?'selected':''}>Central</option></select><span class="chevrons">${svgIcon('chevrons')}</span></span></label>
@@ -838,3 +889,104 @@ async function init(){
 }
 
 init().catch(err=>{console.error(err);$app.innerHTML=`<main class="content"><h1>Erro ao abrir o aplicativo</h1><pre>${esc(err.message)}</pre></main>`;});
+
+
+/* === Developer controls: bottom tab bar === */
+(function(){
+  const DEV_TABBAR_KEY = "dev_tabbar_controls_v051";
+  const defaults = {
+    iconColor:"#6E6E73",
+    iconSize:25,
+    textColor:"#6E6E73",
+    textSize:10.5,
+    showLabels:true,
+    borderColor:"rgba(255,255,255,.72)",
+    borderWidth:1
+  };
+
+  function loadCfg(){
+    try { return Object.assign({}, defaults, JSON.parse(localStorage.getItem(DEV_TABBAR_KEY)||"{}")); }
+    catch(e){ return {...defaults}; }
+  }
+  function saveCfg(c){ localStorage.setItem(DEV_TABBAR_KEY, JSON.stringify(c)); }
+  function applyCfg(){
+    const c=loadCfg(), root=document.documentElement, bar=document.querySelector(".tabbar");
+    root.style.setProperty("--tabbar-icon-color", c.iconColor);
+    root.style.setProperty("--tabbar-icon-size", c.iconSize+"px");
+    root.style.setProperty("--tabbar-text-color", c.textColor);
+    root.style.setProperty("--tabbar-text-size", c.textSize+"px");
+    root.style.setProperty("--tabbar-border-color", c.borderColor);
+    root.style.setProperty("--tabbar-border-width", c.borderWidth+"px");
+    document.querySelectorAll(".tabbar button").forEach(b=>{
+      if(!b.classList.contains("active")) b.style.color=c.iconColor;
+      const label=b.querySelector(".tab-label") || [...b.children].find(x=>!x.classList.contains("sf-icon"));
+      if(label) label.style.color=b.classList.contains("active") ? "" : c.textColor;
+    });
+    if(bar) bar.classList.toggle("hide-labels", !c.showLabels);
+  }
+
+  function row(label, control, info){
+    const wrap=document.createElement("div");
+    wrap.className="setting-row dev-extra-row";
+    wrap.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--separator,#e5e5ea)";
+    const left=document.createElement("div");
+    left.style.cssText="display:flex;align-items:center;gap:6px;min-width:0";
+    const t=document.createElement("span"); t.textContent=label; left.appendChild(t);
+    if(info){
+      const i=document.createElement("button"); i.type="button"; i.textContent="ⓘ";
+      i.style.cssText="border:0;background:transparent;color:var(--accent);font-size:15px;padding:2px";
+      i.onclick=()=>alert(info); left.appendChild(i);
+    }
+    wrap.append(left,control); return wrap;
+  }
+  function colorInput(value,onchange){
+    const i=document.createElement("input"); i.type="color";
+    // normalize rgba fallback to hex-ish
+    i.value=/^#[0-9a-f]{6}$/i.test(value)?value:"#6E6E73";
+    i.oninput=()=>onchange(i.value); return i;
+  }
+  function stepper(value, step, onchange){
+    const box=document.createElement("div"); box.style.cssText="display:flex;align-items:center;gap:6px";
+    const minus=document.createElement("button"); minus.textContent="−";
+    const input=document.createElement("input"); input.type="number"; input.value=value; input.step=step;
+    input.style.cssText="width:62px;text-align:center";
+    const plus=document.createElement("button"); plus.textContent="+";
+    const set=v=>{ input.value=v; onchange(Number(v)); };
+    minus.onclick=()=>set((Number(input.value)||0)-step);
+    plus.onclick=()=>set((Number(input.value)||0)+step);
+    input.onchange=()=>onchange(Number(input.value));
+    box.append(minus,input,plus); return box;
+  }
+
+  function inject(){
+    applyCfg();
+    const devRoot=document.querySelector("#developerView,.developer-page,[data-view='developer'],.dev-page");
+    if(!devRoot || devRoot.querySelector("#dev-tabbar-section")) return;
+    const host=devRoot.querySelector(".settings-list,.dev-settings,.settings-content") || devRoot;
+    const card=document.createElement("section");
+    card.id="dev-tabbar-section";
+    card.className="settings-card";
+    card.style.marginTop="16px";
+    const h=document.createElement("h3"); h.textContent="Barra inferior";
+    h.style.cssText="margin:0 0 6px;padding:14px 14px 4px";
+    card.appendChild(h);
+
+    const c=loadCfg();
+    card.append(
+      row("Cor dos ícones", colorInput(c.iconColor,v=>{c.iconColor=v;saveCfg(c);applyCfg();})),
+      row("Tamanho dos ícones", stepper(c.iconSize,1,v=>{c.iconSize=v;saveCfg(c);applyCfg();}), "Altera o tamanho dos ícones da navegação inferior."),
+      row("Cor do texto", colorInput(c.textColor,v=>{c.textColor=v;saveCfg(c);applyCfg();})),
+      row("Tamanho do texto", stepper(c.textSize,.5,v=>{c.textSize=v;saveCfg(c);applyCfg();})),
+      row("Cor da borda", colorInput(c.borderColor,v=>{c.borderColor=v;saveCfg(c);applyCfg();})),
+      row("Espessura da borda", stepper(c.borderWidth,.5,v=>{c.borderWidth=Math.max(0,v);saveCfg(c);applyCfg();}), "Controla a espessura do contorno externo da barra."),
+    );
+    const toggle=document.createElement("input"); toggle.type="checkbox"; toggle.checked=c.showLabels;
+    toggle.onchange=()=>{c.showLabels=toggle.checked;saveCfg(c);applyCfg();};
+    card.append(row("Mostrar títulos das abas",toggle,"Quando desativado, os títulos somem e os ícones são centralizados automaticamente."));
+    host.appendChild(card);
+  }
+
+  document.addEventListener("click",()=>setTimeout(inject,0),true);
+  document.addEventListener("DOMContentLoaded",()=>{applyCfg();setTimeout(inject,100);});
+  setInterval(()=>{applyCfg();inject();},1500);
+})();
