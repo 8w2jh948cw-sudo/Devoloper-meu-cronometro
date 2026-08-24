@@ -1,6 +1,12 @@
 'use strict';
 const CACHE='cronometro-0.8.0';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./initial-data.json'];
+const ASSETS=[
+  './','./index.html','./manifest.webmanifest','./icon.svg','./initial-data.json',
+  './cronometro-v080-01.css','./cronometro-v080-02.css','./cronometro-v080-03.css',
+  './cronometro-v080-01.js','./cronometro-v080-02.js','./cronometro-v080-03.js',
+  './cronometro-v080-04.js','./cronometro-v080-05.js','./cronometro-v080-06.js',
+  './cronometro-v080-07.js','./cronometro-v080-08.js','./cronometro-v080-09.js'
+];
 
 self.addEventListener('install',event=>{
   event.waitUntil(
