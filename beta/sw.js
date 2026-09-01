@@ -1,7 +1,7 @@
 'use strict';
 const CACHE='cronometro-beta-0.8.9-beta.2';
 const ASSETS=[
-  './','./index.html','./app-icon-beta-192.png','./manifest.webmanifest','./icon.svg','./app-icon-192.png','./initial-data.json',
+  './','./index.html','./app-icon-beta-192.png','./manifest.webmanifest','./icon.svg','./app-icon-192.png','./app-icon-512.png','./apple-touch-icon.png','./initial-data.json',
   './cronometro-v080-01.css','./cronometro-v080-02.css','./cronometro-v080-03.css',
   './cronometro-v080-01.js','./cronometro-v080-02.js','./cronometro-v080-03.js',
   './cronometro-v080-04.js','./cronometro-v080-05.js','./cronometro-v080-06.js',
@@ -16,6 +16,42 @@ const ASSETS=[
   './cronometro-v087-data-backup.css','./cronometro-v087-data-backup.js',
   './cronometro-v088-ultra-visual.css','./cronometro-v088-ultra-visual.js'
 ];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('cronometro-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response;}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))));});
+
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('cronometro-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]))});
+
+function isSpecialNavigation(url){
+  const p=url.pathname;
+  return /\/(?:menu\.html|menu\/|diagnostico\/|launch\.html|recover\.html|safe\.html)(?:$|\/)/.test(p);
+}
+
+async function networkThenCache(request,{fallbackIndex=false}={}){
+  try{
+    const response=await fetch(request);
+    if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{})}
+    return response;
+  }catch(_){
+    const hit=await caches.match(request);
+    if(hit)return hit;
+    if(fallbackIndex)return caches.match('./index.html');
+    throw _;
+  }
+}
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const url=new URL(event.request.url);
+  if(url.origin!==self.location.origin)return;
+
+  if(event.request.mode==='navigate'){
+    /* Páginas reais nunca podem virar index.html. */
+    if(isSpecialNavigation(url)){
+      event.respondWith(networkThenCache(event.request,{fallbackIndex:false}));
+      return;
+    }
+    event.respondWith(networkThenCache(event.request,{fallbackIndex:true}));
+    return;
+  }
+
+  event.respondWith(networkThenCache(event.request,{fallbackIndex:false}).catch(()=>caches.match(event.request)));
+});
