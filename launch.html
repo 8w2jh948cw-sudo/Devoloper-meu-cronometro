@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Cronômetro</title>
+  <style>
+    html,body{margin:0;min-height:100%;background:#f5f5f7;color:#111114;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
+    body{min-height:100dvh;display:grid;place-items:center;padding:24px;box-sizing:border-box}main{width:min(100%,360px);text-align:center}
+    .mark{width:54px;height:54px;margin:0 auto 15px;border-radius:16px;background:#fff;display:grid;place-items:center;box-shadow:0 8px 28px rgba(0,0,0,.07);font-size:25px}
+    h1{font-size:24px;line-height:1.15;margin:0 0 8px}.env{display:inline-block;margin-bottom:10px;padding:5px 8px;border-radius:999px;background:#e9f2ff;color:#007aff;font-size:10px;font-weight:800;letter-spacing:.08em}.env.beta{background:#fff0dc;color:#c56a00}
+    .status{font-size:14px;color:#6e6e73;line-height:1.45;margin:0}.bar{height:5px;background:#dedee3;border-radius:999px;overflow:hidden;margin:18px 36px}.bar span{display:block;width:35%;height:100%;background:#007aff;border-radius:inherit;animation:move 1s ease-in-out infinite alternate}@keyframes move{to{transform:translateX(185%)}}
+    @media(prefers-color-scheme:dark){html,body{background:#111114;color:#f7f7f8}.mark{background:#1c1c1e}.status{color:#a1a1a6}.bar{background:#2c2c2e}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="mark" aria-hidden="true">⏱</div>
+  <span id="env" class="env">OFICIAL</span>
+  <h1 id="title">Cronômetro</h1>
+  <p class="status" id="status">Preparando uma abertura limpa…</p>
+  <div class="bar"><span></span></div>
+</main>
+<script>
+(() => {
+  const RELEASE='__RELEASE__';
+  const BETA=location.pathname.includes('/beta/');
+  const status=document.getElementById('status');
+  const env=document.getElementById('env');
+  const title=document.getElementById('title');
+  if(BETA){env.textContent='BETA';env.classList.add('beta');title.textContent='Cronômetro Beta'}
+  const cleanupKey=`cronometro-${BETA?'beta-':'official-'}launch-clean-${RELEASE}`;
+  const basePath=new URL('./',location.href).pathname;
+  const cacheMatch=k=>BETA?k.startsWith('cronometro-beta-'):(k.startsWith('cronometro-')&&!k.startsWith('cronometro-beta-'));
+  async function clean(){
+    let needsClean=true;try{needsClean=localStorage.getItem(cleanupKey)!=='1'}catch(_){}
+    if(!needsClean)return;
+    try{
+      if('serviceWorker' in navigator){
+        const regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.allSettled(regs.filter(r=>{try{return new URL(r.scope).pathname===basePath}catch(_){return false}}).map(r=>r.unregister()));
+      }
+      if('caches' in window){const keys=await caches.keys();await Promise.allSettled(keys.filter(cacheMatch).map(k=>caches.delete(k)))}
+      try{localStorage.setItem(cleanupKey,'1')}catch(_){}
+    }catch(_){}
+  }
+  (async()=>{await clean();status.textContent='Abrindo a interface…';setTimeout(()=>location.replace(`./?v=${encodeURIComponent(RELEASE)}&launch=${Date.now()}`),90)})();
+})();
+</script>
+</body>
+</html>
