@@ -1,17 +1,15 @@
-name: Publicar Cronômetro · Oficial Beta Diagnóstico
+name: Sincronizar site público do Cronômetro
 
 on:
   push:
-    branches: ["main", "stable"]
+    branches: ["development"]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: "pages-cronometro"
+  group: "cronometro-publicacao-main"
   cancel-in-progress: true
 
 env:
@@ -19,16 +17,21 @@ env:
   BETA_LABEL: "0.8.9-beta.2"
 
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-and-sync-main:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do desenvolvimento Beta
+      - name: Checkout da main que o Pages realmente publica
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 1
+
+      - name: Checkout do código de desenvolvimento
+        uses: actions/checkout@v4
+        with:
+          ref: development
+          path: _dev
+          persist-credentials: false
 
       - name: Checkout da versão Oficial congelada
         uses: actions/checkout@v4
@@ -37,48 +40,70 @@ jobs:
           path: _stable
           persist-credentials: false
 
-      - name: Montar Beta a partir da main
-        run: python3 prepare_release.py . _beta_site "${BETA_LABEL}"
+      - name: Montar Beta a partir de development
+        run: python3 _dev/prepare_release.py _dev _dev/_beta_site "${BETA_LABEL}"
 
-      - name: Montar Oficial a partir da stable
-        run: python3 prepare_release.py _stable _stable_site "${STABLE_RELEASE}"
+      - name: Montar Oficial a partir de stable
+        run: python3 _dev/prepare_release.py _stable _dev/_stable_site "${STABLE_RELEASE}"
 
-      - name: Criar ambientes isolados
-        run: python3 prepare_environments.py
-
-      - name: Conferir Oficial Beta e Diagnóstico
+      - name: Criar Oficial Beta Diagnóstico e Menu
         run: |
-          test -s site/index.html
-          test -s site/launch.html
-          test -s site/safe.html
-          test -s site/recover.html
-          test -s site/beta/index.html
-          test -s site/beta/launch.html
-          test -s site/beta/safe.html
-          test -s site/beta/recover.html
-          test -s site/beta/beta-tools.js
-          test -s site/beta/beta-patches.js
-          test -s site/beta/app-icon-192.png
-          test -s site/diagnostico/index.html
-          grep -q "const DB_NAME='cronometro_local_v1';" site/cronometro-v080-01.js
-          grep -q "const DB_NAME='cronometro_beta_v1';" site/beta/cronometro-v080-01.js
-          ! grep -q "const DB_NAME='cronometro_local_v1';" site/beta/cronometro-v080-01.js
-          grep -q 'Cronômetro Beta' site/beta/index.html
-          grep -q 'app-icon-192.png' site/beta/index.html
-          grep -q 'DADOS ISOLADOS' site/diagnostico/index.html
-          grep -q 'writes_to_production' site/beta/environment.json
-          echo "Oficial ${STABLE_RELEASE} congelado; Beta ${BETA_LABEL} isolada e pronta."
+          cd _dev
+          STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_environments.py
+          STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_menu.py
 
-      - name: Habilitar e configurar GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - name: Validar antes de tocar na main
+        run: |
+          test -s _dev/site/index.html
+          test -s _dev/site/menu.html
+          test -s _dev/site/menu/index.html
+          test -s _dev/site/diagnostico/index.html
+          test -s _dev/site/beta/index.html
+          test -s _dev/site/beta/app-icon-beta-192.png
+          test -s _dev/site/beta/launch.html
+          test -s _dev/site/beta/recover.html
+          test -s _dev/site/beta/safe.html
+          grep -q "const DB_NAME='cronometro_local_v1';" _dev/site/cronometro-v080-01.js
+          grep -q "const DB_NAME='cronometro_beta_v1';" _dev/site/beta/cronometro-v080-01.js
+          ! grep -q "const DB_NAME='cronometro_local_v1';" _dev/site/beta/cronometro-v080-01.js
+          grep -q 'Cronômetro Beta' _dev/site/beta/index.html
+          grep -q 'app-icon-beta-192.png' _dev/site/beta/manifest.webmanifest
+          grep -q 'Central de Diagnóstico' _dev/site/menu.html
+          grep -q 'DADOS ISOLADOS' _dev/site/diagnostico/index.html
+          ! grep -q 'href="../' _dev/site/menu.html
+          echo "Pacote validado: Oficial ${STABLE_RELEASE}; Beta ${BETA_LABEL}; Menu e Diagnóstico presentes."
 
-      - name: Enviar site completo
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+      - name: Substituir os arquivos públicos da main pelo pacote validado
+        run: |
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name .git \
+            ! -name .github \
+            ! -name _dev \
+            ! -name _stable \
+            -exec rm -rf {} +
+          cp -a _dev/site/. ./
+          rm -rf _dev _stable
 
-      - name: Publicar
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Confirmar que a própria main contém o site servido
+        run: |
+          test -s index.html
+          test -s menu.html
+          test -s menu/index.html
+          test -s diagnostico/index.html
+          test -s beta/index.html
+          test -s beta/app-icon-beta-192.png
+          grep -q "const DB_NAME='cronometro_local_v1';" cronometro-v080-01.js
+          grep -q "const DB_NAME='cronometro_beta_v1';" beta/cronometro-v080-01.js
+          echo "main pronta para o GitHub Pages."
+
+      - name: Gravar pacote público na main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração pública pendente."
+          else
+            git commit -m "chore(pages): publica Oficial Beta Menu e Diagnóstico [skip ci]"
+            git push origin main
+          fi
