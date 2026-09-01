@@ -15,14 +15,15 @@ if not (STABLE_SITE / 'index.html').exists():
     raise SystemExit('Build Oficial ausente em _stable_site')
 if not (BETA_SOURCE / 'index.html').exists():
     raise SystemExit('Build Beta ausente em _beta_site')
+if not (ROOT / 'app-icon-beta-192.png').exists():
+    raise SystemExit('Ícone Beta com selo ausente')
 
 if SITE.exists():
     shutil.rmtree(SITE)
 shutil.copytree(STABLE_SITE, SITE)
 
-# OFICIAL: snapshot congelado da branch stable. O banco permanece exatamente o
-# mesmo usado atualmente no app, preservando os dados quando publicado no mesmo
-# domínio/origem.
+# OFICIAL: snapshot congelado da branch stable. O banco continua exatamente o
+# mesmo usado pela versão de produção.
 (SITE / 'environment.json').write_text(json.dumps({
     'environment':'production',
     'release':STABLE_RELEASE,
@@ -37,6 +38,7 @@ beta = SITE / 'beta'
 if beta.exists():
     shutil.rmtree(beta)
 shutil.copytree(BETA_SOURCE,beta)
+shutil.copy2(ROOT / 'app-icon-beta-192.png', beta / 'app-icon-beta-192.png')
 
 base_js = beta / 'cronometro-v080-01.js'
 text = base_js.read_text(encoding='utf-8')
@@ -50,6 +52,8 @@ sw = beta / 'sw.js'
 if sw.exists():
     sw_text = sw.read_text(encoding='utf-8')
     sw_text = re.sub(r"const CACHE='cronometro-[^']+';",f"const CACHE='cronometro-beta-{BETA_LABEL}';",sw_text,count=1)
+    if "'./app-icon-beta-192.png'" not in sw_text:
+        sw_text = sw_text.replace("'./','./index.html'", "'./','./index.html','./app-icon-beta-192.png'", 1)
     sw.write_text(sw_text,encoding='utf-8')
 
 # Ferramentas de teste e camada experimental da Beta.
@@ -57,16 +61,30 @@ tools = (ROOT / 'beta-tools.js').read_text(encoding='utf-8').replace('__BETA_REL
 (beta / 'beta-tools.js').write_text(tools,encoding='utf-8')
 shutil.copy2(ROOT / 'beta-patches.js',beta / 'beta-patches.js')
 
+
+def replace_or_inject_icon(path: Path, href: str):
+    if not path.exists():
+        return
+    text = path.read_text(encoding='utf-8')
+    # remove referências anteriores do projeto e garante uma única identidade
+    text = re.sub(r'\s*<link rel="apple-touch-icon"[^>]*>', '', text)
+    text = re.sub(r'\s*<link rel="icon"[^>]*>', '', text)
+    tags = f'\n  <link rel="icon" type="image/png" sizes="192x192" href="{href}">\n  <link rel="apple-touch-icon" sizes="192x192" href="{href}">\n'
+    text = text.replace('</head>', tags + '</head>', 1)
+    path.write_text(text,encoding='utf-8')
+
+# Beta sempre identificada como Beta, inclusive quando adicionada à Tela de Início.
 idx_path = beta / 'index.html'
 idx = idx_path.read_text(encoding='utf-8')
 idx = idx.replace('<title>Cronômetro</title>','<title>Cronômetro Beta</title>',1)
 idx = idx.replace('content="Cronômetro"','content="Cronômetro Beta"')
-idx = idx.replace('content="yes"','content="yes"')
 if 'name="robots"' not in idx:
     idx = idx.replace('<meta charset="utf-8" />','<meta charset="utf-8" />\n  <meta name="robots" content="noindex,nofollow" />',1)
 if 'beta-tools.js' not in idx:
     idx = idx.replace('</body>',f'  <script src="./beta-tools.js?v={BETA_LABEL}" defer></script>\n  <script src="./beta-patches.js?v={BETA_LABEL}" defer></script>\n</body>',1)
 idx_path.write_text(idx,encoding='utf-8')
+for name in ('index.html','launch.html','recover.html','safe.html'):
+    replace_or_inject_icon(beta / name, './app-icon-beta-192.png')
 
 manifest_path = beta / 'manifest.webmanifest'
 manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
@@ -75,24 +93,30 @@ manifest['short_name']='Cronômetro Beta'
 manifest['id']='./'
 manifest['scope']='./'
 manifest['start_url']=f'./launch.html?v={BETA_LABEL}'
+manifest['icons']=[{
+    'src':'./app-icon-beta-192.png',
+    'sizes':'192x192',
+    'type':'image/png',
+    'purpose':'any'
+}]
 manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (beta / 'version.json').write_text(json.dumps({'version':BETA_LABEL},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (beta / 'environment.json').write_text(json.dumps({
     'environment':'beta',
     'release':BETA_LABEL,
-    'branch':'main',
+    'branch':'development',
     'database':'cronometro_beta_v1',
     'production_database':'cronometro_local_v1',
     'writes_to_production':False,
     'copy_direction':'production-to-beta-only',
 },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
-# CENTRAL DE DIAGNÓSTICO: navegação independente do motor principal.
+# CENTRAL DE DIAGNÓSTICO: funciona sem carregar o motor principal.
 diag = SITE / 'diagnostico'
 diag.mkdir(exist_ok=True)
 diag_html=f'''<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f5f5f7"><title>Diagnóstico · Cronômetro</title>
-<style>html,body{{margin:0;min-height:100%;background:#f5f5f7;color:#111114;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}}main{{max-width:430px;margin:auto;padding:calc(28px + env(safe-area-inset-top)) 18px 36px}}h1{{font-size:28px;margin:0 0 7px}}.lead{{margin:0 0 22px;color:#6e6e73;line-height:1.45;font-size:14px}}h2{{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#8e8e93;margin:22px 4px 8px}}.card{{display:block;text-decoration:none;color:inherit;background:#fff;border-radius:17px;padding:15px 16px;margin:9px 0;box-shadow:0 4px 18px rgba(0,0,0,.04)}}.card strong{{display:block;font-size:15px;margin-bottom:4px}}.card span{{display:block;color:#6e6e73;font-size:12px;line-height:1.4}}.tag{{display:inline-block!important;width:auto;margin-top:7px;padding:4px 7px;border-radius:999px;background:#e9f2ff;color:#007aff!important;font-weight:800;font-size:10px!important}}.beta .tag{{background:#fff0dc;color:#c56a00!important}}.warn .tag{{background:#fff1dc;color:#c66a00!important}}@media(prefers-color-scheme:dark){{html,body{{background:#111114;color:#f7f7f8}}.card{{background:#1c1c1e;box-shadow:none}}.lead,.card span,h2{{color:#a1a1a6}}}}</style></head><body><main>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#101118"><meta name="apple-mobile-web-app-title" content="Cronômetro Diagnóstico"><title>Diagnóstico · Cronômetro</title><link rel="icon" href="../icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="../icon.svg">
+<style>html,body{{margin:0;min-height:100%;background:#101118;color:#f7f7fb;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}}main{{max-width:430px;margin:auto;padding:calc(28px + env(safe-area-inset-top)) 18px 36px}}h1{{font-size:28px;margin:0 0 7px}}.lead{{margin:0 0 22px;color:#9b9dad;line-height:1.45;font-size:14px}}h2{{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#74778a;margin:22px 4px 8px}}.card{{display:block;text-decoration:none;color:inherit;background:#1a1c27;border:1px solid #2c3041;border-radius:17px;padding:15px 16px;margin:9px 0}}.card strong{{display:block;font-size:15px;margin-bottom:4px}}.card span{{display:block;color:#9b9dad;font-size:12px;line-height:1.4}}.tag{{display:inline-block!important;width:auto;margin-top:7px;padding:4px 7px;border-radius:999px;background:#1b3b24;color:#87e69a!important;font-weight:800;font-size:10px!important}}.beta .tag{{background:#3b2373;color:#d0b5ff!important}}.warn .tag{{background:#4c3312;color:#ffd06e!important}}</style></head><body><main>
 <h1>Diagnóstico</h1><p class="lead">Ferramentas independentes para abrir, recuperar e verificar o Cronômetro sem apagar seus registros.</p>
 <h2>Oficial · {STABLE_RELEASE}</h2>
 <a class="card" href="../"><strong>Abrir app Oficial</strong><span>Versão estável preservada para uso real.</span><span class="tag">ESTÁVEL</span></a>
@@ -109,8 +133,9 @@ diag_html=f'''<!doctype html>
 
 (SITE/'ambientes.json').write_text(json.dumps({
     'official':{'path':'./','release':STABLE_RELEASE,'branch':'stable','database':'cronometro_local_v1'},
-    'beta':{'path':'./beta/','release':BETA_LABEL,'branch':'main','database':'cronometro_beta_v1','writes_to_production':False},
+    'beta':{'path':'./beta/','release':BETA_LABEL,'branch':'development','database':'cronometro_beta_v1','writes_to_production':False},
     'diagnostic':{'path':'./diagnostico/'},
+    'menu':{'path':'./menu/'},
     'data_flow':'official-to-beta-only',
 },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
@@ -120,6 +145,8 @@ checks={
     'beta usa banco isolado':"const DB_NAME='cronometro_beta_v1';" in (beta/'cronometro-v080-01.js').read_text(encoding='utf-8'),
     'beta não usa DB oficial no motor':"const DB_NAME='cronometro_local_v1';" not in (beta/'cronometro-v080-01.js').read_text(encoding='utf-8'),
     'beta claramente identificada':'Cronômetro Beta' in (beta/'index.html').read_text(encoding='utf-8'),
+    'ícone Beta com selo publicado':(beta/'app-icon-beta-192.png').exists(),
+    'manifest Beta usa ícone próprio':'app-icon-beta-192.png' in (beta/'manifest.webmanifest').read_text(encoding='utf-8'),
     'ferramentas beta':(beta/'beta-tools.js').exists(),
     'diagnóstico presente':(diag/'index.html').exists(),
     'diagnóstico informa isolamento':'DADOS ISOLADOS' in (diag/'index.html').read_text(encoding='utf-8'),
