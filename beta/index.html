@@ -22,13 +22,16 @@
   <link rel="stylesheet" href="./cronometro-v088-ultra-visual.css" />
 
   <link rel="icon" type="image/png" sizes="192x192" href="./app-icon-beta-192.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="./app-icon-beta-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-beta.png">
 </head>
 <body>
   <div id="app"><div class="boot-message">Abrindo Cronômetro…</div></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script>window.APP_RELEASE='0.8.9-beta.2';</script>
+  
+  <!-- cronometro-public-runtime -->
+  <script>window.APP_RELEASE="0.8.9-beta.3";window.__CRONOMETRO_DISABLE_SW__=true;setTimeout(()=>{const t=(p,m)=>Promise.race([p,new Promise(r=>setTimeout(()=>r(null),m))]);(async()=>{try{const base=new URL('./',location.href).pathname;if('serviceWorker'in navigator){const regs=await t(navigator.serviceWorker.getRegistrations(),500);if(Array.isArray(regs))Promise.allSettled(regs.filter(x=>{try{return new URL(x.scope).pathname===base}catch(_){return false}}).map(x=>x.unregister()));}if('caches'in window){const keys=await t(caches.keys(),500);if(Array.isArray(keys))Promise.allSettled(keys.filter(k=>k.startsWith('cronometro-beta-')).map(k=>caches.delete(k)));}}catch(_){}})();},0);</script>
   <script src="./boot-resilient.js"></script>
+  <!-- /cronometro-public-runtime -->
   <script src="./cronometro-v080-01.js"></script>
   <script src="./cronometro-v080-02.js"></script>
   <script src="./cronometro-v080-03.js"></script>
@@ -53,7 +56,7 @@
   <script src="./cronometro-v086-stats-icon.js"></script>
   <script src="./cronometro-v087-data-backup.js"></script>
   <script src="./cronometro-v088-ultra-visual.js"></script>
-  <script src="./beta-tools.js?v=0.8.9-beta.2" defer></script>
-  <script src="./beta-patches.js?v=0.8.9-beta.2" defer></script>
+  <script src="./beta-tools.js?v=0.8.9-beta.3" defer></script>
+  <script src="./beta-patches.js?v=0.8.9-beta.3" defer></script>
 </body>
 </html>

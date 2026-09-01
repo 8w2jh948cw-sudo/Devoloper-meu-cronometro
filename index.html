@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Cronômetro" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
   <title>Cronômetro</title>
   <link rel="stylesheet" href="./cronometro-v080-01.css" />
   <link rel="stylesheet" href="./cronometro-v080-02.css" />
@@ -20,10 +19,18 @@
   <link rel="stylesheet" href="./cronometro-v084-bottom-bar-lab.css" />
   <link rel="stylesheet" href="./cronometro-v087-data-backup.css" />
   <link rel="stylesheet" href="./cronometro-v088-ultra-visual.css" />
+
+  <link rel="icon" type="image/png" sizes="192x192" href="./app-icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 </head>
 <body>
   <div id="app"><div class="boot-message">Abrindo Cronômetro…</div></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  
+  <!-- cronometro-public-runtime -->
+  <script>window.APP_RELEASE="0.8.8";</script>
+  <script src="./boot-resilient.js"></script>
+  <!-- /cronometro-public-runtime -->
   <script src="./cronometro-v080-01.js"></script>
   <script src="./cronometro-v080-02.js"></script>
   <script src="./cronometro-v080-03.js"></script>

@@ -1,9 +1,10 @@
 {
   "environment": "beta",
-  "release": "0.8.9-beta.2",
+  "release": "0.8.9-beta.3",
   "branch": "development",
   "database": "cronometro_beta_v1",
   "production_database": "cronometro_local_v1",
   "writes_to_production": false,
-  "copy_direction": "production-to-beta-only"
+  "copy_direction": "production-to-beta-only",
+  "service_worker_registration": "disabled-during-development"
 }

@@ -1,57 +1,128 @@
 'use strict';
-const CACHE='cronometro-beta-0.8.9-beta.2';
+const CACHE="cronometro-beta-0.8.9-beta.3-public-2";
+const BETA_MODE=true;
 const ASSETS=[
-  './','./index.html','./app-icon-beta-192.png','./manifest.webmanifest','./icon.svg','./app-icon-192.png','./app-icon-512.png','./apple-touch-icon.png','./initial-data.json',
-  './cronometro-v080-01.css','./cronometro-v080-02.css','./cronometro-v080-03.css',
-  './cronometro-v080-01.js','./cronometro-v080-02.js','./cronometro-v080-03.js',
-  './cronometro-v080-04.js','./cronometro-v080-05.js','./cronometro-v080-06.js',
-  './cronometro-v080-07.js','./cronometro-v080-08.js','./cronometro-v080-09.js',
-  './cronometro-v081-overrides.css','./cronometro-v081-version.js',
-  './cronometro-v081-overrides-1.js','./cronometro-v081-overrides-2.js','./cronometro-v081-overrides-3.js',
-  './cronometro-v082-overrides.css','./cronometro-v082-01.js','./cronometro-v082-02.js',
-  './cronometro-v082-03.js','./cronometro-v082-04.js','./cronometro-v082-05.js',
-  './cronometro-v083-fixes.css','./cronometro-v083-version.js',
-  './cronometro-v084-bottom-bar-lab.css','./cronometro-v084-bottom-bar-lab.js',
-  './cronometro-v085-sound-settings.js','./cronometro-v086-stats-icon.js',
-  './cronometro-v087-data-backup.css','./cronometro-v087-data-backup.js',
-  './cronometro-v088-ultra-visual.css','./cronometro-v088-ultra-visual.js'
+  "./",
+  "./AI_RULES_MIN.txt",
+  "./DEVELOPMENT.txt",
+  "./THIRD_PARTY_NOTICES.txt",
+  "./app-icon-192.png",
+  "./app-icon-beta-192.png",
+  "./app-icon-beta-512.png",
+  "./app.js",
+  "./apple-touch-icon-beta.png",
+  "./beta-patches.js",
+  "./beta-tools.js",
+  "./boot-resilient.js",
+  "./cronometro-v080-01.css",
+  "./cronometro-v080-01.js",
+  "./cronometro-v080-02.css",
+  "./cronometro-v080-02.js",
+  "./cronometro-v080-03.css",
+  "./cronometro-v080-03.js",
+  "./cronometro-v080-04.js",
+  "./cronometro-v080-05.js",
+  "./cronometro-v080-06.js",
+  "./cronometro-v080-07.js",
+  "./cronometro-v080-08.js",
+  "./cronometro-v080-09.js",
+  "./cronometro-v081-overrides-1.js",
+  "./cronometro-v081-overrides-2.js",
+  "./cronometro-v081-overrides-3.js",
+  "./cronometro-v081-overrides.css",
+  "./cronometro-v081-version.js",
+  "./cronometro-v082-01.js",
+  "./cronometro-v082-02.js",
+  "./cronometro-v082-03.js",
+  "./cronometro-v082-04.js",
+  "./cronometro-v082-05.js",
+  "./cronometro-v082-overrides.css",
+  "./cronometro-v083-fixes.css",
+  "./cronometro-v083-version.js",
+  "./cronometro-v084-bottom-bar-lab.css",
+  "./cronometro-v084-bottom-bar-lab.js",
+  "./cronometro-v085-sound-settings.js",
+  "./cronometro-v086-stats-icon.js",
+  "./cronometro-v087-data-backup.css",
+  "./cronometro-v087-data-backup.js",
+  "./cronometro-v088-ultra-visual.css",
+  "./cronometro-v088-ultra-visual.js",
+  "./design-config.js",
+  "./environment.json",
+  "./icon.svg",
+  "./index.html",
+  "./initial-data.json",
+  "./jszip.min.js",
+  "./launch.html",
+  "./manifest.webmanifest",
+  "./recover.html",
+  "./safe.html",
+  "./styles-v080-01.css",
+  "./styles.css",
+  "./version.json"
 ];
+const SCOPE_PATH=new URL(self.registration.scope).pathname;
 
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('cronometro-')&&key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]))});
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil(Promise.all([
+    caches.keys().then(keys=>Promise.all(keys.filter(key=>{
+      if(BETA_MODE)return key.startsWith('cronometro-beta-')&&key!==CACHE;
+      return key.startsWith('cronometro-')&&!key.startsWith('cronometro-beta-')&&key!==CACHE;
+    }).map(key=>caches.delete(key)))),
+    self.clients.claim()
+  ]));
+});
 
-function isSpecialNavigation(url){
-  const p=url.pathname;
-  return /\/(?:menu\.html|menu\/|diagnostico\/|launch\.html|recover\.html|safe\.html)(?:$|\/)/.test(p);
+function relPath(url){
+  return url.pathname.startsWith(SCOPE_PATH)?url.pathname.slice(SCOPE_PATH.length):url.pathname;
 }
-
-async function networkThenCache(request,{fallbackIndex=false}={}){
+function isSpecialNavigation(url){
+  const rel=relPath(url);
+  if(!BETA_MODE&&rel.startsWith('beta/'))return true;
+  return rel==='menu.html'||rel.startsWith('menu/')||rel.startsWith('diagnostico/')||rel==='launch.html'||rel==='recover.html'||rel==='safe.html';
+}
+async function networkFirst(request, fallbackIndex=false){
   try{
     const response=await fetch(request);
-    if(response&&response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{})}
+    if(response&&response.ok){
+      const copy=response.clone();
+      caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{});
+    }
     return response;
-  }catch(_){
-    const hit=await caches.match(request);
+  }catch(error){
+    const hit=await caches.match(request,{ignoreSearch:true});
     if(hit)return hit;
-    if(fallbackIndex)return caches.match('./index.html');
-    throw _;
+    if(fallbackIndex){
+      const fallback=await caches.match('./index.html');
+      if(fallback)return fallback;
+    }
+    throw error;
   }
 }
-
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin)return;
+  const rel=relPath(url);
 
-  if(event.request.mode==='navigate'){
-    /* Páginas reais nunca podem virar index.html. */
-    if(isSpecialNavigation(url)){
-      event.respondWith(networkThenCache(event.request,{fallbackIndex:false}));
-      return;
-    }
-    event.respondWith(networkThenCache(event.request,{fallbackIndex:true}));
+  /* O SW Oficial nunca interfere em /beta/. */
+  if(!BETA_MODE&&rel.startsWith('beta/')){
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  event.respondWith(networkThenCache(event.request,{fallbackIndex:false}).catch(()=>caches.match(event.request)));
+  if(event.request.mode==='navigate'){
+    /* Páginas reais nunca recebem index.html como fallback. */
+    if(isSpecialNavigation(url)){
+      event.respondWith(networkFirst(event.request,false));
+      return;
+    }
+    event.respondWith(networkFirst(event.request,true));
+    return;
+  }
+
+  event.respondWith(networkFirst(event.request,false).catch(()=>caches.match(event.request,{ignoreSearch:true})));
 });

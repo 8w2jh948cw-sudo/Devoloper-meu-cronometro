@@ -175,7 +175,7 @@ async function init(){
     if(ui.tab==='timers'&&ui.timerView==='timers'&&data.current&&data.current.timers.some(isTimerActive))refreshTimerReadouts();
   },1000);
 
-  if('serviceWorker' in navigator){
+  if('serviceWorker' in navigator&&!window.__CRONOMETRO_DISABLE_SW__){
     try{await navigator.serviceWorker.register('./sw.js');}
     catch(error){console.warn('Service worker não registrado',error);}
   }
