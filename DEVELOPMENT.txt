@@ -1,0 +1,71 @@
+CRONÔMETRO — AMBIENTES OFICIAL / BETA / DIAGNÓSTICO
+
+REGRA PRINCIPAL
+- A versão Oficial é a branch stable.
+- A branch main é desenvolvimento/Beta.
+- Toda mudança nova deve ser implementada primeiro na Beta.
+- A Oficial só recebe mudanças quando o usuário disser explicitamente para promover/aprovar a Beta.
+- Nunca promover automaticamente apenas porque a Beta parece estável.
+
+VERSÕES INICIAIS
+- Oficial congelada: 0.8.8
+- Beta inicial: 0.8.9-beta.1
+
+DADOS
+- Oficial: IndexedDB cronometro_local_v1.
+- Beta: IndexedDB cronometro_beta_v1.
+- A Beta nunca escreve no banco Oficial.
+- Existe somente o fluxo de cópia Oficial -> Beta para testes.
+- Não implementar fluxo Beta -> Oficial.
+- Limpar/recuperar a Beta só pode afetar o banco/cache da Beta.
+- Recuperação da Oficial nunca pode apagar IndexedDB ou registros; apenas cache/Service Worker da interface.
+
+IDENTIFICAÇÃO VISUAL DA BETA
+- A Beta deve ter badge laranja BETA sempre visível.
+- O título/PWA deve dizer Cronômetro Beta.
+- A tela de cronômetros deve informar que os dados são isolados.
+- A Beta oferece: Copiar dados do Oficial e Limpar Beta.
+- Essas ações precisam confirmar explicitamente que a Oficial não será alterada.
+
+CENTRAL DE DIAGNÓSTICO
+- /diagnostico/ deve funcionar sem carregar o motor principal.
+- Deve fornecer links separados para Oficial e Beta:
+  1. app normal
+  2. inicializador seguro (launch.html)
+  3. recuperação da interface (recover.html)
+  4. modo seguro (safe.html)
+- O diagnóstico deve destacar DADOS ISOLADOS para Beta.
+
+MODO SEGURO
+- safe.html não depende do app principal.
+- Lê o IndexedDB correspondente ao ambiente.
+- Mostra contagem de registros/modelos e versão do banco.
+- Permite backup JSON de emergência compatível com a estrutura do Cronômetro.
+- Não altera os dados durante a verificação.
+
+RECUPERAÇÃO
+- recover.html remove somente Service Worker e caches do ambiente correspondente.
+- Nunca executa indexedDB.deleteDatabase(), clear() nos dados Oficiais ou limpeza geral do Safari.
+- Após recuperação, redireciona para launch.html.
+
+INICIALIZADOR
+- launch.html limpa somente runtime/cache antigo do ambiente e depois abre a interface.
+- Oficial e Beta devem possuir caches separados.
+
+PUBLICAÇÃO
+- GitHub Pages é montado automaticamente pelo workflow .github/workflows/pages.yml.
+- A raiz do Pages contém o snapshot da branch stable.
+- /beta/ contém a main com banco isolado.
+- /diagnostico/ contém a central de ferramentas.
+- O mesmo pacote de site pode ser implantado no domínio Cloudflare já usado pelo usuário; mantendo o mesmo domínio, o banco Oficial cronometro_local_v1 continua sendo o mesmo e os registros existentes permanecem acessíveis.
+
+PROMOÇÃO BETA -> OFICIAL
+- Código: só após autorização explícita do usuário, mover o commit aprovado da main para stable.
+- Dados: NÃO copiar o banco Beta para o Oficial. A promoção é de código, não de registros de teste.
+- Atualizar STABLE_RELEASE no workflow somente durante uma promoção aprovada.
+- Depois da promoção, iniciar uma nova versão Beta acima da Oficial.
+
+SEGURANÇA CONTRA CONFUSÃO
+- Nunca chamar Beta de Oficial.
+- Sempre citar a versão Beta com sufixo beta.
+- Ao enviar links ao usuário, rotular explicitamente OFICIAL, BETA e DIAGNÓSTICO.
