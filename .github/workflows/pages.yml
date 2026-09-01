@@ -41,7 +41,9 @@ jobs:
           persist-credentials: false
 
       - name: Preparar ferramentas de ícone
-        run: python3 -m pip install --disable-pip-version-check --quiet pillow
+        run: |
+          python3 -m pip install --disable-pip-version-check --quiet pillow
+          python3 _dev/prepare_beta_icon.py
 
       - name: Montar Beta a partir de development
         run: python3 _dev/prepare_release.py _dev _dev/_beta_site "${BETA_LABEL}"
