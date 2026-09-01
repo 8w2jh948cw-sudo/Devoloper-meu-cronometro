@@ -14,7 +14,7 @@ concurrency:
 
 env:
   STABLE_RELEASE: "0.8.8"
-  BETA_LABEL: "0.8.9-beta.2"
+  BETA_LABEL: "0.8.9-beta.3"
 
 jobs:
   build-and-sync-main:
@@ -40,38 +40,85 @@ jobs:
           path: _stable
           persist-credentials: false
 
+      - name: Preparar ferramentas de ícone
+        run: python3 -m pip install --disable-pip-version-check --quiet pillow
+
       - name: Montar Beta a partir de development
         run: python3 _dev/prepare_release.py _dev _dev/_beta_site "${BETA_LABEL}"
 
       - name: Montar Oficial a partir de stable
         run: python3 _dev/prepare_release.py _stable _dev/_stable_site "${STABLE_RELEASE}"
 
-      - name: Criar Oficial Beta Diagnóstico e Menu
+      - name: Criar Oficial Beta Menu Diagnóstico e proteção de runtime
         run: |
           cd _dev
           STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_environments.py
-          STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_menu.py
 
-      - name: Validar antes de tocar na main
+      - name: Validar manual PWA iPhone antes de tocar na main
         run: |
+          # fonte pública e rotas reais
           test -s _dev/site/index.html
           test -s _dev/site/menu.html
           test -s _dev/site/menu/index.html
           test -s _dev/site/diagnostico/index.html
+          test -s _dev/site/launch.html
+          test -s _dev/site/recover.html
+          test -s _dev/site/safe.html
           test -s _dev/site/beta/index.html
-          test -s _dev/site/beta/app-icon-beta-192.png
           test -s _dev/site/beta/launch.html
           test -s _dev/site/beta/recover.html
           test -s _dev/site/beta/safe.html
+
+          # bancos Oficial/Beta isolados
           grep -q "const DB_NAME='cronometro_local_v1';" _dev/site/cronometro-v080-01.js
           grep -q "const DB_NAME='cronometro_beta_v1';" _dev/site/beta/cronometro-v080-01.js
           ! grep -q "const DB_NAME='cronometro_local_v1';" _dev/site/beta/cronometro-v080-01.js
+
+          # Beta claramente identificada e sem novo SW durante desenvolvimento
           grep -q 'Cronômetro Beta' _dev/site/beta/index.html
-          grep -q 'app-icon-beta-192.png' _dev/site/beta/manifest.webmanifest
+          grep -q '__CRONOMETRO_DISABLE_SW__=true' _dev/site/beta/index.html
+          grep -q '!window.__CRONOMETRO_DISABLE_SW__' _dev/site/beta/cronometro-v080-09.js
+
+          # boot resiliente
+          test -s _dev/site/boot-resilient.js
+          test -s _dev/site/beta/boot-resilient.js
+          grep -q 'boot-resilient.js' _dev/site/index.html
+          grep -q 'boot-resilient.js' _dev/site/beta/index.html
+
+          # ícones iPhone: 180 + manifest 192/512, distintos na Beta
+          test -s _dev/site/apple-touch-icon.png
+          test -s _dev/site/app-icon-192.png
+          test -s _dev/site/app-icon-512.png
+          test -s _dev/site/beta/apple-touch-icon-beta.png
+          test -s _dev/site/beta/app-icon-beta-192.png
+          test -s _dev/site/beta/app-icon-beta-512.png
+          grep -q 'apple-touch-icon.png' _dev/site/index.html
+          grep -q 'apple-touch-icon-beta.png' _dev/site/beta/index.html
+          grep -q 'app-icon-512.png' _dev/site/manifest.webmanifest
+          grep -q 'app-icon-beta-512.png' _dev/site/beta/manifest.webmanifest
+          grep -q '"start_url": "./"' _dev/site/manifest.webmanifest
+          grep -q '"start_url": "./"' _dev/site/beta/manifest.webmanifest
+
+          # menu independente e responsivo no iPhone
           grep -q 'Central de Diagnóstico' _dev/site/menu.html
-          grep -q 'DADOS ISOLADOS' _dev/site/diagnostico/index.html
+          grep -q 'repeat(2,minmax(0,1fr))' _dev/site/menu.html
+          grep -q 'overflow-x:hidden' _dev/site/menu.html
+          ! grep -q 'cronometro-v080-01.js' _dev/site/menu.html
           ! grep -q 'href="../' _dev/site/menu.html
-          echo "Pacote validado: Oficial ${STABLE_RELEASE}; Beta ${BETA_LABEL}; Menu e Diagnóstico presentes."
+
+          # Service Worker não pode transformar páginas reais em index.html
+          grep -q 'Páginas reais nunca recebem index.html' _dev/site/sw.js
+          grep -q 'menu.html' _dev/site/sw.js
+          grep -q "rel.startsWith('beta/')" _dev/site/sw.js
+
+          # diagnóstico e recuperação segura
+          grep -q 'Registrations reais' _dev/site/diagnostico/index.html
+          grep -q 'Caches do Cronômetro' _dev/site/diagnostico/index.html
+          grep -q 'controller residual' _dev/site/diagnostico/index.html
+          ! grep -q 'indexedDB.deleteDatabase' _dev/site/recover.html
+          ! grep -q 'localStorage.clear' _dev/site/recover.html
+
+          echo "Manual validado: Oficial ${STABLE_RELEASE}; Beta ${BETA_LABEL}; main pronta para publicação."
 
       - name: Substituir os arquivos públicos da main pelo pacote validado
         run: |
@@ -91,10 +138,12 @@ jobs:
           test -s menu/index.html
           test -s diagnostico/index.html
           test -s beta/index.html
-          test -s beta/app-icon-beta-192.png
+          test -s apple-touch-icon.png
+          test -s beta/apple-touch-icon-beta.png
           grep -q "const DB_NAME='cronometro_local_v1';" cronometro-v080-01.js
           grep -q "const DB_NAME='cronometro_beta_v1';" beta/cronometro-v080-01.js
-          echo "main pronta para o GitHub Pages."
+          grep -q '0.8.9-beta.3' beta/version.json
+          echo "main contém exatamente o site que o GitHub Pages servirá."
 
       - name: Gravar pacote público na main
         run: |
@@ -104,6 +153,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nenhuma alteração pública pendente."
           else
-            git commit -m "chore(pages): publica Oficial Beta Menu e Diagnóstico [skip ci]"
+            git commit -m "chore(pages): publica PWA endurecida Oficial Beta Menu e Diagnóstico [skip ci]"
             git push origin main
           fi
