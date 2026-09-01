@@ -1,6 +1,7 @@
 {
   "name": "Cronômetro Beta",
   "short_name": "Cronômetro Beta",
+  "id": "./",
   "start_url": "./launch.html?v=0.8.9-beta.2",
   "scope": "./",
   "display": "standalone",
@@ -15,6 +16,5 @@
       "purpose": "any"
     }
   ],
-  "description": "Cronômetro PWA",
-  "id": "./"
+  "description": "Cronômetro PWA"
 }
