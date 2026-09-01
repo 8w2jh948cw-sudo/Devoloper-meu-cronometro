@@ -14,7 +14,8 @@
     .mark{width:54px;height:54px;margin:0 auto 15px;border-radius:16px;background:#fff;display:grid;place-items:center;box-shadow:0 8px 28px rgba(0,0,0,.07);font-size:25px}
     h1{font-size:24px;line-height:1.15;margin:0 0 8px}.env{display:inline-block;margin-bottom:10px;padding:5px 8px;border-radius:999px;background:#e9f2ff;color:#007aff;font-size:10px;font-weight:800;letter-spacing:.08em}.env.beta{background:#fff0dc;color:#c56a00}
     .status{font-size:14px;color:#6e6e73;line-height:1.45;margin:0}.bar{height:5px;background:#dedee3;border-radius:999px;overflow:hidden;margin:18px 36px}.bar span{display:block;width:35%;height:100%;background:#007aff;border-radius:inherit;animation:move 1s ease-in-out infinite alternate}@keyframes move{to{transform:translateX(185%)}}
-    @media(prefers-color-scheme:dark){html,body{background:#111114;color:#f7f7f8}.mark{background:#1c1c1e}.status{color:#a1a1a6}.bar{background:#2c2c2e}}
+    .note{font-size:11px;color:#8e8e93;line-height:1.4;margin-top:10px}
+    @media(prefers-color-scheme:dark){html,body{background:#111114;color:#f7f7f8}.mark{background:#1c1c1e}.status,.note{color:#a1a1a6}.bar{background:#2c2c2e}}
   </style>
 </head>
 <body>
@@ -24,6 +25,7 @@
   <h1 id="title">Cronômetro</h1>
   <p class="status" id="status">Preparando uma abertura limpa…</p>
   <div class="bar"><span></span></div>
+  <p class="note">A manutenção de cache nunca bloqueia a abertura por mais de alguns segundos.</p>
 </main>
 <script>
 (() => {
@@ -36,19 +38,40 @@
   const cleanupKey=`cronometro-${BETA?'beta-':'official-'}launch-clean-${RELEASE}`;
   const basePath=new URL('./',location.href).pathname;
   const cacheMatch=k=>BETA?k.startsWith('cronometro-beta-'):(k.startsWith('cronometro-')&&!k.startsWith('cronometro-beta-'));
+  const withTimeout=(promise,ms)=>Promise.race([promise,new Promise(resolve=>setTimeout(()=>resolve({timedOut:true}),ms))]);
+
   async function clean(){
     let needsClean=true;try{needsClean=localStorage.getItem(cleanupKey)!=='1'}catch(_){}
-    if(!needsClean)return;
+    if(!needsClean)return {skipped:true};
+    let workers=0,cachesRemoved=0;
     try{
       if('serviceWorker' in navigator){
-        const regs=await navigator.serviceWorker.getRegistrations();
-        await Promise.allSettled(regs.filter(r=>{try{return new URL(r.scope).pathname===basePath}catch(_){return false}}).map(r=>r.unregister()));
+        const regs=await withTimeout(navigator.serviceWorker.getRegistrations(),650);
+        if(!regs?.timedOut&&Array.isArray(regs)){
+          const targets=regs.filter(r=>{try{return new URL(r.scope).pathname===basePath}catch(_){return false}});
+          const results=await withTimeout(Promise.allSettled(targets.map(r=>r.unregister())),650);
+          if(Array.isArray(results))workers=results.filter(r=>r.status==='fulfilled'&&r.value).length;
+        }
       }
-      if('caches' in window){const keys=await caches.keys();await Promise.allSettled(keys.filter(cacheMatch).map(k=>caches.delete(k)))}
+      if('caches' in window){
+        const keys=await withTimeout(caches.keys(),650);
+        if(!keys?.timedOut&&Array.isArray(keys)){
+          const results=await withTimeout(Promise.allSettled(keys.filter(cacheMatch).map(k=>caches.delete(k))),650);
+          if(Array.isArray(results))cachesRemoved=results.filter(r=>r.status==='fulfilled'&&r.value).length;
+        }
+      }
       try{localStorage.setItem(cleanupKey,'1')}catch(_){}
-    }catch(_){}
+      return {workers,cachesRemoved};
+    }catch(error){return {error:String(error?.message||error)}}
   }
-  (async()=>{await clean();status.textContent='Abrindo a interface…';setTimeout(()=>location.replace(`./?v=${encodeURIComponent(RELEASE)}&launch=${Date.now()}`),90)})();
+
+  (async()=>{
+    const result=await withTimeout(clean(),1800);
+    if(result?.timedOut)status.textContent='Ambiente web: limpeza continua em segundo plano. Abrindo o app…';
+    else if(result?.error)status.textContent='A limpeza não terminou, mas o app será aberto normalmente.';
+    else status.textContent='Abrindo a interface…';
+    setTimeout(()=>location.replace(`./?launch=${Date.now()}`),120);
+  })();
 })();
 </script>
 </body>
