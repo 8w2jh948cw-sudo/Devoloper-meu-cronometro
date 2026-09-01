@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Cronômetro" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" sizes="192x192" href="./app-icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./app-icon-192.png" />
   <title>Cronômetro</title>
   <link rel="stylesheet" href="./cronometro-v080-01.css" />
@@ -25,6 +25,8 @@
 <body>
   <div id="app"><div class="boot-message">Abrindo Cronômetro…</div></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>window.APP_RELEASE='__RELEASE__';</script>
+  <script src="./boot-resilient.js"></script>
   <script src="./cronometro-v080-01.js"></script>
   <script src="./cronometro-v080-02.js"></script>
   <script src="./cronometro-v080-03.js"></script>
