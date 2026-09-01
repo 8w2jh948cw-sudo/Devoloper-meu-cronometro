@@ -20,12 +20,25 @@
     .cronometro-beta-actions{display:flex;gap:8px;margin-top:10px}.cronometro-beta-actions button{appearance:none;border:0;border-radius:11px;padding:9px 10px;font:650 11px/1.15 inherit;background:#111114;color:#fff}.cronometro-beta-actions button:last-child{background:#e5e5ea;color:#1c1c1e}
     @media(prefers-color-scheme:dark){#cronometroBetaCard{background:rgba(255,159,10,.12);border-color:rgba(255,159,10,.34)}#cronometroBetaCard p{color:#a1a1a6}.cronometro-beta-actions button{background:#f2f2f4;color:#111114}.cronometro-beta-actions button:last-child{background:#2c2c2e;color:#f2f2f4}}
   `;document.head.appendChild(el)}
-  function badge(){style();if(document.getElementById('cronometroBetaBadge'))return;const b=document.createElement('div');b.id='cronometroBetaBadge';b.textContent='BETA';document.body.appendChild(b)}
-  function card(){style();if(document.getElementById('cronometroBetaCard'))return true;const home=document.querySelector('.timer-content');if(!home)return false;const c=document.createElement('section');c.id='cronometroBetaCard';c.innerHTML=`<strong>Cronômetro Beta · ${BETA_RELEASE}</strong><p>Dados isolados. Cronometrar, editar ou apagar algo aqui não altera seus registros da versão Oficial.</p><div class="cronometro-beta-actions"><button type="button" id="cronometroBetaCopy">Copiar dados do Oficial</button><button type="button" id="cronometroBetaClear">Limpar Beta</button></div>`;home.prepend(c);
+  function badge(){style();if(document.getElementById('cronometroBetaBadge'))return false;const b=document.createElement('div');b.id='cronometroBetaBadge';b.textContent='BETA';document.body.appendChild(b);return true}
+  function card(){style();if(document.getElementById('cronometroBetaCard'))return false;const home=document.querySelector('.timer-content');if(!home)return false;const c=document.createElement('section');c.id='cronometroBetaCard';c.dataset.betaPatched='1';c.innerHTML=`<strong>Cronômetro Beta · ${BETA_RELEASE}</strong><p>Dados isolados. Cronometrar, editar ou apagar algo aqui não altera seus registros da versão Oficial.</p><div class="cronometro-beta-actions"><button type="button" id="cronometroBetaCopy">Copiar dados do Oficial</button><button type="button" id="cronometroBetaClear">Limpar Beta</button></div>`;home.prepend(c);
     document.getElementById('cronometroBetaCopy').onclick=async e=>{if(!confirm('Substituir os dados atuais da Beta por uma cópia dos dados do app Oficial? O Oficial não será alterado.'))return;const b=e.currentTarget;b.disabled=true;b.textContent='Copiando…';try{const x=await copyOfficialToBeta();alert(`Cópia concluída: ${x.sessions} registros e ${x.models} modelos. O app Oficial permaneceu intacto.`);location.reload()}catch(error){console.error(error);b.disabled=false;b.textContent='Tentar novamente';alert('Não foi possível copiar os dados para a Beta. Nenhum dado do Oficial foi alterado.')}};
     document.getElementById('cronometroBetaClear').onclick=async e=>{if(!confirm('Apagar somente os dados da Beta? Seus dados do app Oficial permanecerão intactos.'))return;const b=e.currentTarget;b.disabled=true;b.textContent='Limpando…';try{await clearBetaOnly();location.reload()}catch(error){console.error(error);b.disabled=false;b.textContent='Tentar novamente';alert('Não foi possível limpar a Beta. O Oficial não foi alterado.')}};return true}
-  function markVersion(){document.title='Cronômetro Beta';try{globalThis.APP_META=Object.freeze({...globalThis.APP_META,version:BETA_RELEASE})}catch(_){}document.querySelectorAll('#app-version-badge').forEach(el=>el.textContent=`BETA · v${BETA_RELEASE}`)}
+  function markVersion(){if(document.title!=='Cronômetro Beta')document.title='Cronômetro Beta';try{if(globalThis.APP_META?.version!==BETA_RELEASE)globalThis.APP_META=Object.freeze({...globalThis.APP_META,version:BETA_RELEASE})}catch(_){}document.querySelectorAll('#app-version-badge').forEach(el=>{const next=`BETA · v${BETA_RELEASE}`;if(el.textContent!==next)el.textContent=next})}
   function apply(){badge();markVersion();card()}
-  apply();document.addEventListener('DOMContentLoaded',apply,{once:true});[50,250,900,1800].forEach(ms=>setTimeout(apply,ms));
-  const observer=new MutationObserver(()=>apply());observer.observe(document.documentElement,{subtree:true,childList:true});
+
+  apply();
+  document.addEventListener('DOMContentLoaded',apply,{once:true});
+  [60,250,800,1800].forEach(ms=>setTimeout(apply,ms));
+
+  /* Observa somente a raiz do app. Durante o patch o observer fica desconectado,
+     evitando o ciclo MutationObserver -> patch -> MutationObserver. */
+  const root=document.getElementById('app');
+  if(root){
+    const observer=new MutationObserver(()=>{
+      observer.disconnect();
+      try{apply()}finally{observer.observe(root,{childList:true,subtree:true})}
+    });
+    observer.observe(root,{childList:true,subtree:true});
+  }
 })();
