@@ -26,23 +26,36 @@ for pattern in patterns:
 
 # As páginas de segurança podem evoluir no desenvolvimento sem alterar o motor
 # congelado da branch stable. Se não existirem no snapshot estável, usamos as
-# páginas de suporte da main.
-for name in ('launch.html','recover.html','safe.html'):
+# páginas de suporte da branch que executa o build.
+for name in ('launch.html','recover.html','safe.html','boot-resilient.js'):
     dst = OUTPUT / name
     if not dst.exists() and (ROOT / name).exists():
         shutil.copy2(ROOT / name, dst)
 
-for name in ('launch.html','recover.html','safe.html'):
-    path = OUTPUT / name
-    if path.exists():
-        path.write_text(path.read_text(encoding='utf-8').replace('__RELEASE__', RELEASE), encoding='utf-8')
+# Uma única release é injetada nos pontos que usam o placeholder. Isso evita
+# depender de query string para corrigir versão antiga.
+for path in OUTPUT.iterdir():
+    if not path.is_file() or path.suffix.lower() not in {'.html','.js','.json','.webmanifest','.txt'}:
+        continue
+    try:
+        text = path.read_text(encoding='utf-8')
+    except UnicodeDecodeError:
+        continue
+    if '__RELEASE__' in text:
+        path.write_text(text.replace('__RELEASE__', RELEASE), encoding='utf-8')
 
 (OUTPUT / 'version.json').write_text(json.dumps({'version': RELEASE}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 (OUTPUT / '.nojekyll').write_text('', encoding='utf-8')
 
-required = ['index.html','manifest.webmanifest','sw.js','version.json','cronometro-v080-01.js','launch.html','recover.html','safe.html']
+required = [
+    'index.html','manifest.webmanifest','sw.js','version.json','cronometro-v080-01.js',
+    'launch.html','recover.html','safe.html','boot-resilient.js'
+]
 missing = [name for name in required if not (OUTPUT / name).exists()]
 if missing:
     raise SystemExit('Build incompleto: ' + ', '.join(missing))
+
+if '__RELEASE__' in (OUTPUT / 'index.html').read_text(encoding='utf-8'):
+    raise SystemExit('Placeholder de release permaneceu no index.html')
 
 print(f'Build preparado: {SOURCE.name} -> {OUTPUT} / {RELEASE}')
