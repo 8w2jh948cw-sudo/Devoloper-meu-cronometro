@@ -1,0 +1,22 @@
+{
+  "official": {
+    "path": "./",
+    "release": "0.8.8",
+    "branch": "stable",
+    "database": "cronometro_local_v1"
+  },
+  "beta": {
+    "path": "./beta/",
+    "release": "0.8.9-beta.2",
+    "branch": "development",
+    "database": "cronometro_beta_v1",
+    "writes_to_production": false
+  },
+  "diagnostic": {
+    "path": "./diagnostico/"
+  },
+  "menu": {
+    "path": "./menu/"
+  },
+  "data_flow": "official-to-beta-only"
+}

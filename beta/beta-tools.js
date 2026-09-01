@@ -1,7 +1,7 @@
 /* Cronômetro — ferramentas exclusivas do ambiente Beta */
 (() => {
   'use strict';
-  const BETA_RELEASE='__BETA_RELEASE__';
+  const BETA_RELEASE='0.8.9-beta.2';
   const PROD_DB='cronometro_local_v1';
   const BETA_DB='cronometro_beta_v1';
   const STORES=['models','sessions','state'];

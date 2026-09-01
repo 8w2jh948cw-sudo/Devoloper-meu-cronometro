@@ -1,7 +1,7 @@
 'use strict';
-const CACHE='cronometro-0.8.8';
+const CACHE='cronometro-beta-0.8.9-beta.2';
 const ASSETS=[
-  './','./index.html','./manifest.webmanifest','./icon.svg','./initial-data.json',
+  './','./index.html','./app-icon-beta-192.png','./manifest.webmanifest','./icon.svg','./app-icon-192.png','./initial-data.json',
   './cronometro-v080-01.css','./cronometro-v080-02.css','./cronometro-v080-03.css',
   './cronometro-v080-01.js','./cronometro-v080-02.js','./cronometro-v080-03.js',
   './cronometro-v080-04.js','./cronometro-v080-05.js','./cronometro-v080-06.js',

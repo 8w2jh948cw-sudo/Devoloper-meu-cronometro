@@ -1,0 +1,8 @@
+{
+  "environment": "production",
+  "release": "0.8.8",
+  "branch": "stable",
+  "database": "cronometro_local_v1",
+  "stable": true,
+  "writes_to_beta": false
+}

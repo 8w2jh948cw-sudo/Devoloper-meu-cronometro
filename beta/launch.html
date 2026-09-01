@@ -16,6 +16,9 @@
     .status{font-size:14px;color:#6e6e73;line-height:1.45;margin:0}.bar{height:5px;background:#dedee3;border-radius:999px;overflow:hidden;margin:18px 36px}.bar span{display:block;width:35%;height:100%;background:#007aff;border-radius:inherit;animation:move 1s ease-in-out infinite alternate}@keyframes move{to{transform:translateX(185%)}}
     @media(prefers-color-scheme:dark){html,body{background:#111114;color:#f7f7f8}.mark{background:#1c1c1e}.status{color:#a1a1a6}.bar{background:#2c2c2e}}
   </style>
+
+  <link rel="icon" type="image/png" sizes="192x192" href="./app-icon-beta-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./app-icon-beta-192.png">
 </head>
 <body>
 <main>
@@ -27,7 +30,7 @@
 </main>
 <script>
 (() => {
-  const RELEASE='0.8.8';
+  const RELEASE='0.8.9-beta.2';
   const BETA=location.pathname.includes('/beta/');
   const status=document.getElementById('status');
   const env=document.getElementById('env');
