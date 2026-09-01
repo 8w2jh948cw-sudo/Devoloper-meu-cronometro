@@ -55,6 +55,7 @@ jobs:
         run: |
           cd _dev
           STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_environments.py
+          python3 finalize_public_metadata.py
 
       - name: Validar manual PWA iPhone antes de tocar na main
         run: |
@@ -101,6 +102,10 @@ jobs:
           grep -q '"start_url": "./"' _dev/site/manifest.webmanifest
           grep -q '"start_url": "./"' _dev/site/beta/manifest.webmanifest
 
+          # metadados não podem carregar versão antiga
+          ! grep -q 'v0.8.1' _dev/site/manifest.webmanifest
+          ! grep -q 'v0.8.1' _dev/site/beta/manifest.webmanifest
+
           # menu independente e responsivo no iPhone
           grep -q 'Central de Diagnóstico' _dev/site/menu.html
           grep -q 'repeat(2,minmax(0,1fr))' _dev/site/menu.html
@@ -145,6 +150,8 @@ jobs:
           grep -q "const DB_NAME='cronometro_local_v1';" cronometro-v080-01.js
           grep -q "const DB_NAME='cronometro_beta_v1';" beta/cronometro-v080-01.js
           grep -q '0.8.9-beta.3' beta/version.json
+          ! grep -q 'v0.8.1' manifest.webmanifest
+          ! grep -q 'v0.8.1' beta/manifest.webmanifest
           echo "main contém exatamente o site que o GitHub Pages servirá."
 
       - name: Gravar pacote público na main
