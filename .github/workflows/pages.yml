@@ -16,7 +16,7 @@ concurrency:
 
 env:
   STABLE_RELEASE: "0.8.8"
-  BETA_LABEL: "0.8.9-beta.1"
+  BETA_LABEL: "0.8.9-beta.2"
 
 jobs:
   build-and-deploy:
@@ -58,11 +58,13 @@ jobs:
           test -s site/beta/recover.html
           test -s site/beta/beta-tools.js
           test -s site/beta/beta-patches.js
+          test -s site/beta/app-icon-192.png
           test -s site/diagnostico/index.html
           grep -q "const DB_NAME='cronometro_local_v1';" site/cronometro-v080-01.js
           grep -q "const DB_NAME='cronometro_beta_v1';" site/beta/cronometro-v080-01.js
           ! grep -q "const DB_NAME='cronometro_local_v1';" site/beta/cronometro-v080-01.js
           grep -q 'Cronômetro Beta' site/beta/index.html
+          grep -q 'app-icon-192.png' site/beta/index.html
           grep -q 'DADOS ISOLADOS' site/diagnostico/index.html
           grep -q 'writes_to_production' site/beta/environment.json
           echo "Oficial ${STABLE_RELEASE} congelado; Beta ${BETA_LABEL} isolada e pronta."
