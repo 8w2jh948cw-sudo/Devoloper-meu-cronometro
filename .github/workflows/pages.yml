@@ -1,0 +1,82 @@
+name: Publicar Cronômetro · Oficial Beta Diagnóstico
+
+on:
+  push:
+    branches: ["main", "stable"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-cronometro"
+  cancel-in-progress: true
+
+env:
+  STABLE_RELEASE: "0.8.8"
+  BETA_LABEL: "0.8.9-beta.1"
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do desenvolvimento Beta
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Checkout da versão Oficial congelada
+        uses: actions/checkout@v4
+        with:
+          ref: stable
+          path: _stable
+          persist-credentials: false
+
+      - name: Montar Beta a partir da main
+        run: python3 prepare_release.py . _beta_site "${BETA_LABEL}"
+
+      - name: Montar Oficial a partir da stable
+        run: python3 prepare_release.py _stable _stable_site "${STABLE_RELEASE}"
+
+      - name: Criar ambientes isolados
+        run: python3 prepare_environments.py
+
+      - name: Conferir Oficial Beta e Diagnóstico
+        run: |
+          test -s site/index.html
+          test -s site/launch.html
+          test -s site/safe.html
+          test -s site/recover.html
+          test -s site/beta/index.html
+          test -s site/beta/launch.html
+          test -s site/beta/safe.html
+          test -s site/beta/recover.html
+          test -s site/beta/beta-tools.js
+          test -s site/beta/beta-patches.js
+          test -s site/diagnostico/index.html
+          grep -q "const DB_NAME='cronometro_local_v1';" site/cronometro-v080-01.js
+          grep -q "const DB_NAME='cronometro_beta_v1';" site/beta/cronometro-v080-01.js
+          ! grep -q "const DB_NAME='cronometro_local_v1';" site/beta/cronometro-v080-01.js
+          grep -q 'Cronômetro Beta' site/beta/index.html
+          grep -q 'DADOS ISOLADOS' site/diagnostico/index.html
+          grep -q 'writes_to_production' site/beta/environment.json
+          echo "Oficial ${STABLE_RELEASE} congelado; Beta ${BETA_LABEL} isolada e pronta."
+
+      - name: Habilitar e configurar GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Enviar site completo
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
