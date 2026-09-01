@@ -9,7 +9,7 @@ STABLE_SITE = ROOT / '_stable_site'
 BETA_SOURCE = ROOT / '_beta_site'
 SITE = ROOT / 'site'
 STABLE_RELEASE = os.environ.get('STABLE_RELEASE','0.8.8').strip()
-BETA_LABEL = os.environ.get('BETA_LABEL','0.8.9-beta.1').strip()
+BETA_LABEL = os.environ.get('BETA_LABEL','0.8.9-beta.2').strip()
 
 if not (STABLE_SITE / 'index.html').exists():
     raise SystemExit('Build Oficial ausente em _stable_site')
