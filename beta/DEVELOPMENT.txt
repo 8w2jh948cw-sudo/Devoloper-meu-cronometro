@@ -1,40 +1,58 @@
-CRONÔMETRO — AMBIENTES OFICIAL / BETA / DIAGNÓSTICO
+CRONÔMETRO — AMBIENTES OFICIAL / BETA / MENU / DIAGNÓSTICO
 
 REGRA PRINCIPAL
 - A versão Oficial é a branch stable.
-- A branch main é desenvolvimento/Beta.
-- Toda mudança nova deve ser implementada primeiro na Beta.
+- A branch development é o código de desenvolvimento/Beta.
+- A branch main NÃO é mais usada para desenvolver: ela contém somente o pacote público que o GitHub Pages realmente serve.
+- Toda mudança nova deve ser implementada primeiro em development/Beta.
 - A Oficial só recebe mudanças quando o usuário disser explicitamente para promover/aprovar a Beta.
 - Nunca promover automaticamente apenas porque a Beta parece estável.
 
-VERSÕES INICIAIS
+VERSÕES ATUAIS
 - Oficial congelada: 0.8.8
-- Beta inicial: 0.8.9-beta.1
+- Beta: 0.8.9-beta.2
+
+PUBLICAÇÃO — REGRA QUE RESOLVEU O 404
+- O GitHub Pages desta conta serve os arquivos reais presentes na branch main.
+- Não confiar apenas em um artifact/deploy separado do workflow.
+- O workflow acionado por development monta o pacote final e substitui os arquivos públicos da main.
+- A main final deve conter fisicamente: index.html, beta/, diagnostico/, menu/, menu.html, launch.html, recover.html e safe.html.
+- Essa arquitetura replica a correção já usada no projeto Registro Mental.
 
 DADOS
 - Oficial: IndexedDB cronometro_local_v1.
 - Beta: IndexedDB cronometro_beta_v1.
 - A Beta nunca escreve no banco Oficial.
-- Existe somente o fluxo de cópia Oficial -> Beta para testes.
+- Existe somente o fluxo de cópia Oficial -> Beta para testes quando ambos estiverem no mesmo domínio/origem.
 - Não implementar fluxo Beta -> Oficial.
 - Limpar/recuperar a Beta só pode afetar o banco/cache da Beta.
 - Recuperação da Oficial nunca pode apagar IndexedDB ou registros; apenas cache/Service Worker da interface.
+- O GitHub Pages e o Cloudflare são origens diferentes. Os dados locais não migram automaticamente entre eles.
 
 IDENTIFICAÇÃO VISUAL DA BETA
-- A Beta deve ter badge laranja BETA sempre visível.
+- A Beta deve ter badge BETA sempre visível dentro do app.
 - O título/PWA deve dizer Cronômetro Beta.
+- O ícone da Beta deve usar o ícone aprovado com cápsula BETA.
 - A tela de cronômetros deve informar que os dados são isolados.
 - A Beta oferece: Copiar dados do Oficial e Limpar Beta.
 - Essas ações precisam confirmar explicitamente que a Oficial não será alterada.
 
+MENU CENTRAL
+- /menu/ e /menu.html devem existir.
+- O menu mostra links clicáveis com ícones para:
+  1. Oficial
+  2. Beta
+  3. Central de Diagnóstico
+  4. Inicializador Oficial
+  5. Recuperação Oficial
+  6. Modo Seguro Oficial
+  7. Inicializador Beta
+  8. Recuperação Beta
+  9. Modo Seguro Beta
+
 CENTRAL DE DIAGNÓSTICO
-- /diagnostico/ deve funcionar sem carregar o motor principal.
-- Deve fornecer links separados para Oficial e Beta:
-  1. app normal
-  2. inicializador seguro (launch.html)
-  3. recuperação da interface (recover.html)
-  4. modo seguro (safe.html)
-- O diagnóstico deve destacar DADOS ISOLADOS para Beta.
+- /diagnostico/ funciona sem carregar o motor principal.
+- Deve fornecer links separados para Oficial e Beta e destacar DADOS ISOLADOS para Beta.
 
 MODO SEGURO
 - safe.html não depende do app principal.
@@ -50,22 +68,15 @@ RECUPERAÇÃO
 
 INICIALIZADOR
 - launch.html limpa somente runtime/cache antigo do ambiente e depois abre a interface.
-- Oficial e Beta devem possuir caches separados.
-
-PUBLICAÇÃO
-- GitHub Pages é montado automaticamente pelo workflow .github/workflows/pages.yml.
-- A raiz do Pages contém o snapshot da branch stable.
-- /beta/ contém a main com banco isolado.
-- /diagnostico/ contém a central de ferramentas.
-- O mesmo pacote de site pode ser implantado no domínio Cloudflare já usado pelo usuário; mantendo o mesmo domínio, o banco Oficial cronometro_local_v1 continua sendo o mesmo e os registros existentes permanecem acessíveis.
+- Oficial e Beta possuem caches separados.
 
 PROMOÇÃO BETA -> OFICIAL
-- Código: só após autorização explícita do usuário, mover o commit aprovado da main para stable.
+- Código: somente após autorização explícita do usuário, promover a versão aprovada de development para stable.
 - Dados: NÃO copiar o banco Beta para o Oficial. A promoção é de código, não de registros de teste.
 - Atualizar STABLE_RELEASE no workflow somente durante uma promoção aprovada.
-- Depois da promoção, iniciar uma nova versão Beta acima da Oficial.
+- Depois da promoção, iniciar nova Beta acima da Oficial.
 
 SEGURANÇA CONTRA CONFUSÃO
 - Nunca chamar Beta de Oficial.
 - Sempre citar a versão Beta com sufixo beta.
-- Ao enviar links ao usuário, rotular explicitamente OFICIAL, BETA e DIAGNÓSTICO.
+- Ao enviar links ao usuário, rotular explicitamente OFICIAL, BETA, MENU e DIAGNÓSTICO.
