@@ -1,7 +1,7 @@
 {
   "official": {
     "path": "./",
-    "release": "0.8.8",
+    "release": "0.8.9",
     "branch": "stable",
     "database": "cronometro_local_v1"
   },

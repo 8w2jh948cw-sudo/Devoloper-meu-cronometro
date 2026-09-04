@@ -1,5 +1,5 @@
 'use strict';
-const CACHE="cronometro-official-0.8.8-public-2";
+const CACHE="cronometro-official-0.8.9-public-2";
 const BETA_MODE=false;
 const ASSETS=[
   "./",
@@ -43,6 +43,9 @@ const ASSETS=[
   "./cronometro-v087-data-backup.js",
   "./cronometro-v088-ultra-visual.css",
   "./cronometro-v088-ultra-visual.js",
+  "./cronometro-v089-area-switch-fix.css",
+  "./cronometro-v089-area-switch-fix.js",
+  "./cronometro-v089-legacy-client-migration.js",
   "./design-config.js",
   "./environment.json",
   "./icon.svg",

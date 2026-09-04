@@ -1,0 +1,9 @@
+/* v0.8.9 — defesa de empilhamento para diálogos sobre navegação/popovers. */
+.modal-wrap,
+.client-picker-wrap,
+.client-profile-wrap,
+.notes-editor-wrap,
+.area-type-wrap,
+.ios-text-prompt-backdrop {
+  z-index: 10000 !important;
+}
