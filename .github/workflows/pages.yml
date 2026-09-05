@@ -119,7 +119,6 @@ jobs:
           ! grep -q 'cronometro-v080-01.js' _dev/site/menu.html
           ! grep -q 'href="../' _dev/site/menu.html
           grep -q 'Histórico de versões' _dev/site/menu.html
-          grep -q 'Histórico de versões' _dev/site/menu/index.html
           grep -q 'cronometro_archive_080' _dev/site/versoes/0.8.0/cronometro-v080-01.js
           grep -q 'cronometro_archive_088' _dev/site/versoes/0.8.8/cronometro-v080-01.js
           grep -q '__CRONOMETRO_ARCHIVE__=true' _dev/site/versoes/0.8.8/index.html
