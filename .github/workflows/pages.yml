@@ -31,6 +31,7 @@ jobs:
         with:
           ref: development
           path: _dev
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout da versão Oficial congelada
@@ -55,6 +56,7 @@ jobs:
         run: |
           cd _dev
           STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_environments.py
+          STABLE_RELEASE=${STABLE_RELEASE} python3 prepare_version_history.py
           python3 finalize_public_metadata.py
 
       - name: Validar manual PWA iPhone antes de tocar na main
@@ -71,6 +73,10 @@ jobs:
           test -s _dev/site/beta/launch.html
           test -s _dev/site/beta/recover.html
           test -s _dev/site/beta/safe.html
+          test -s _dev/site/versoes/index.html
+          test -s _dev/site/versoes/0.8.0/index.html
+          test -s _dev/site/versoes/0.8.8/index.html
+          test -s _dev/site/historico-versoes.html
 
           # bancos Oficial/Beta isolados
           grep -q "const DB_NAME='cronometro_local_v1';" _dev/site/cronometro-v080-01.js
@@ -112,11 +118,17 @@ jobs:
           grep -q 'overflow-x:hidden' _dev/site/menu.html
           ! grep -q 'cronometro-v080-01.js' _dev/site/menu.html
           ! grep -q 'href="../' _dev/site/menu.html
+          grep -q 'Histórico de versões' _dev/site/menu.html
+          grep -q 'Histórico de versões' _dev/site/menu/index.html
+          grep -q 'cronometro_archive_080' _dev/site/versoes/0.8.0/cronometro-v080-01.js
+          grep -q 'cronometro_archive_088' _dev/site/versoes/0.8.8/cronometro-v080-01.js
+          grep -q '__CRONOMETRO_ARCHIVE__=true' _dev/site/versoes/0.8.8/index.html
 
           # Service Worker não pode transformar páginas reais em index.html
           grep -q 'Páginas reais nunca recebem index.html' _dev/site/sw.js
           grep -q 'menu.html' _dev/site/sw.js
           grep -q "rel.startsWith('beta/')" _dev/site/sw.js
+          grep -q "rel.startsWith('versoes/')" _dev/site/sw.js
 
           # diagnóstico e recuperação segura
           grep -q 'Registrations reais' _dev/site/diagnostico/index.html
@@ -145,6 +157,9 @@ jobs:
           test -s menu/index.html
           test -s diagnostico/index.html
           test -s beta/index.html
+          test -s versoes/index.html
+          test -s versoes/0.8.0/index.html
+          test -s versoes/0.8.8/index.html
           test -s apple-touch-icon.png
           test -s beta/apple-touch-icon-beta.png
           grep -q "const DB_NAME='cronometro_local_v1';" cronometro-v080-01.js
