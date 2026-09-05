@@ -56,8 +56,8 @@ jobs:
         run: |
           cd _dev
           STABLE_RELEASE=${STABLE_RELEASE} BETA_LABEL=${BETA_LABEL} python3 prepare_environments.py
-          STABLE_RELEASE=${STABLE_RELEASE} python3 prepare_version_history.py
           python3 finalize_public_metadata.py
+          STABLE_RELEASE=${STABLE_RELEASE} python3 prepare_version_history.py
 
       - name: Validar manual PWA iPhone antes de tocar na main
         run: |
