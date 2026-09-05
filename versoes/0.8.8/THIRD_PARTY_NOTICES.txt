@@ -1,0 +1,8 @@
+THIRD-PARTY NOTICES
+
+Iconoir
+https://iconoir.com/
+License: MIT
+Copyright (c) Iconoir contributors.
+
+The app does not bundle the full Iconoir library. When a user chooses an Iconoir icon by name, the app downloads that SVG once from jsDelivr and stores the selected SVG with the timer data so the selected marker can continue to render from local app data.

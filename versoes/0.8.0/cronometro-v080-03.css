@@ -1,0 +1,262 @@
+
+.timer-visual-marker.empty{display:none}
+.timer-card .name.fit-long{font-size:max(11.5px,calc(var(--timer-name-size,15px) - 1.5px))}
+.timer-card .name.fit-xlong{font-size:max(10.5px,calc(var(--timer-name-size,15px) - 3px))}
+.timer-card.central .name.fit-long{font-size:max(14px,calc(var(--timer-name-size,18px) - 2px))}
+.timer-card.central .name.fit-xlong{font-size:max(12px,calc(var(--timer-name-size,18px) - 4px))}
+
+/* Tempo total cresce em vez de encolher os algarismos */
+.floating-actions.timer-actions.total-hours{
+  grid-template-columns:minmax(0,1.3fr) minmax(108px,.7fr);
+}
+.floating-actions.timer-actions.total-xlong{
+  grid-template-columns:minmax(0,1.5fr) minmax(104px,.5fr);
+}
+.total-time{font-size:var(--total-time-size,30px)!important}
+
+/* Confirmação visual forte depois de Salvar */
+.save-confirmation{
+  position:fixed;inset:0;z-index:120;
+  display:grid;place-items:center;
+  pointer-events:none;
+  background:rgba(0,0,0,.08);
+  animation:save-confirmation-fade 1.35s ease both;
+}
+.save-confirmation-card{
+  min-width:178px;
+  padding:22px 24px 20px;
+  border-radius:28px;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  color:var(--text);
+  box-shadow:0 18px 65px rgba(0,0,0,.25);
+  backdrop-filter:blur(26px) saturate(145%);
+  -webkit-backdrop-filter:blur(26px) saturate(145%);
+  display:grid;justify-items:center;gap:9px;
+  font-size:16px;font-weight:720;
+}
+.save-confirmation-icon{
+  width:50px;height:50px;border-radius:50%;
+  background:var(--action);
+  color:#fff;display:grid;place-items:center;
+}
+.save-confirmation-icon .sf-icon{width:29px;height:29px;stroke-width:3.4}
+@keyframes save-confirmation-fade{
+  0%{opacity:0;transform:scale(.96)}
+  10%,80%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(.99)}
+}
+
+/* Botão de lixeira: navegação vermelha, mas não destrutiva */
+.history-header .header-pill{
+  color:var(--delete-fixed,#E22400)!important;
+}
+
+/* Histórico — cor importante no ícone e no tempo, sem aparência de play/pause */
+.history-card{
+  border-radius:22px;
+  border-left:3px solid color-mix(in srgb,var(--accent) 72%,transparent);
+  padding-left:15px;
+}
+.history-total{color:var(--accent)}
+.history-total .sf-icon{color:var(--accent)}
+.history-meta{
+  margin-top:5px;
+  font-size:11.5px;
+  color:var(--secondary);
+}
+.history-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stats-area-filter{
+  margin:2px 18px 15px;
+}
+.stats-area-filter select{
+  width:100%;border:0;border-radius:16px;padding:11px 12px;
+  background:var(--card);color:var(--text);font-size:14px;
+}
+
+/* Detalhe de registro */
+.record-timer-card{
+  border-radius:22px;
+  border-left:3px solid var(--accent);
+  background:color-mix(in srgb,var(--accent) 5%,var(--card));
+}
+.record-timer-card>summary{min-height:68px;padding:9px 14px}
+.record-timer-title{
+  font-size:18.5px;
+  line-height:22px;
+  display:flex;align-items:center;gap:7px;
+}
+.record-timer-time{color:var(--accent)}
+.record-timer-time .sf-icon{width:23px;height:23px;color:var(--accent);stroke-width:1.9}
+.record-timer-time strong{font-size:26px;font-weight:790}
+.record-inline-marker{
+  width:27px;height:27px;display:inline-grid;place-items:center;
+  flex:0 0 27px;font-size:23px;color:var(--accent)
+}
+.record-inline-marker img,.record-inline-marker svg{width:24px;height:24px;object-fit:contain}
+.record-inline-marker.empty{display:none}
+.record-detail-head .record-detail-close{
+  width:34px;height:34px;padding:0;display:grid;place-items:center;
+}
+.record-detail-head .record-detail-close .sf-icon{width:16px;height:16px;margin:auto}
+.record-detail-check{
+  width:36px;height:36px;
+}
+.record-detail-wrap{padding-top:0}
+
+/* Detalhes da tela inicial */
+.details-sheet .sheet-head .detail-close-button{
+  width:32px;height:32px;padding:0;display:grid;place-items:center;
+}
+.details-sheet .sheet-head .detail-close-button .sf-icon{
+  width:15px;height:15px;margin:auto;
+}
+.details-sheet .sheet-head{grid-template-columns:38px 1fr 38px}
+.details-sheet .sheet-body{padding-top:8px}
+.detail-section-label{
+  margin:0 36px 6px;
+  color:var(--secondary);
+  font-size:13px;font-weight:520;
+  text-align:left;
+}
+.timer-size-detail-card{padding:6px 10px;margin-bottom:14px}
+.detail-size-options{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  padding:0;
+  gap:3px;
+}
+.detail-size-options button{min-height:44px}
+.detail-size-options button[data-timer-size="small"]{font-size:12px}
+.detail-size-options button[data-timer-size="medium"]{font-size:14.5px}
+.detail-size-options button[data-timer-size="large"]{font-size:17px}
+.detail-action-card{
+  padding:0;
+  overflow:hidden;
+}
+.detail-action-card .detail-action{
+  width:100%;min-height:56px;border:0;background:transparent;
+  color:var(--accent);font-size:15px;font-weight:650;
+  display:grid;place-items:center;text-align:center;
+}
+.notes-detail-card{padding:12px 14px}
+.notes-detail-card .notes-box{margin:0}
+
+/* Alto risco: vermelho fixo, independente do tema */
+.pending-switch-button.danger{
+  background:var(--delete-fixed,#E22400)!important;
+  color:#FFFFFF!important;
+}
+
+/* Áreas */
+.area-row-actions{display:flex;align-items:center;gap:4px}
+.area-row-actions button{
+  border:0;background:transparent;color:var(--accent);
+  padding:8px 6px;font-size:12.5px;font-weight:620;
+}
+.area-row-actions button.danger{color:var(--delete-fixed,#E22400)!important}
+.models-area-title{
+  margin:17px 8px 6px;
+  color:var(--secondary);
+  font-size:12px;font-weight:650;
+}
+.model-area-row{
+  margin:0 18px 12px;padding:0 16px;
+  min-height:52px;border-radius:22px;background:var(--card);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.model-area-row select{
+  border:0;background:transparent;color:var(--accent);
+  text-align:right;font-size:14px;max-width:55%;
+}
+.model-timer-heading{display:flex;align-items:center;gap:8px;min-width:0}
+.model-timer-heading .timer-visual-marker{width:28px;height:28px;flex-basis:28px;font-size:23px}
+.model-timer-heading strong{overflow:hidden;text-overflow:ellipsis}
+
+/* Editor de marcador */
+.marker-editor-sheet{max-height:90vh}
+.marker-preview{
+  width:72px;height:72px;border-radius:22px;margin:2px auto 14px;
+  background:var(--card);display:grid;place-items:center;
+  color:var(--accent);font-size:48px;
+}
+.marker-preview img,.marker-preview svg{width:52px;height:52px;object-fit:contain}
+.marker-tabs{
+  margin:0 18px 12px;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:4px;padding:4px;background:var(--card);border-radius:999px;
+}
+.marker-tabs button{
+  min-height:36px;border:0;border-radius:999px;background:transparent;
+  color:var(--secondary);font-size:12px;font-weight:650;
+}
+.marker-tabs button.selected{background:var(--tabbar-selected-bg);color:var(--accent)}
+.marker-pane{margin:0 18px 14px}
+.marker-pane input,.marker-pane textarea{
+  width:100%;border:0;border-radius:18px;background:var(--card);
+  color:var(--text);padding:12px 14px;font-size:15px;outline:0;
+}
+.marker-pane textarea{min-height:108px;resize:vertical}
+.marker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.marker-grid button{
+  aspect-ratio:1;border:0;border-radius:18px;background:var(--card);
+  color:var(--accent);display:grid;place-items:center;
+}
+.marker-grid button .sf-icon{width:25px;height:25px}
+.marker-editor-actions{display:grid;gap:8px;margin:0 18px 18px}
+.marker-editor-actions button{
+  min-height:50px;border:0;border-radius:18px;background:var(--card);
+  color:var(--accent);font-weight:650;
+}
+.marker-editor-actions button.primary{background:var(--accent);color:#fff}
+.marker-editor-actions button.danger{color:var(--delete-fixed,#E22400)!important}
+
+/* Janela de texto própria, inspirada no iOS */
+.ios-text-prompt-backdrop{
+  position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.42);
+  display:grid;place-items:center;padding:22px;
+}
+.ios-text-prompt{
+  width:min(100%,380px);border-radius:28px;
+  background:color-mix(in srgb,var(--card) 96%,transparent);
+  color:var(--text);
+  box-shadow:0 22px 80px rgba(0,0,0,.30);
+  backdrop-filter:blur(28px) saturate(145%);
+  -webkit-backdrop-filter:blur(28px) saturate(145%);
+  overflow:hidden;
+}
+.ios-text-prompt-copy{padding:22px 20px 12px;text-align:center}
+.ios-text-prompt-copy h2{font-size:19px;line-height:23px;margin:0 0 7px}
+.ios-text-prompt-copy p{font-size:13.5px;line-height:18px;color:var(--secondary);margin:0}
+.ios-text-prompt-field{padding:0 16px 16px}
+.ios-text-prompt-field input,.ios-text-prompt-field textarea{
+  width:100%;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));
+  border-radius:14px;background:color-mix(in srgb,var(--card) 78%,var(--bg));
+  color:var(--text);padding:11px 12px;font-size:16px;outline:none;
+}
+.ios-text-prompt-field input:focus,.ios-text-prompt-field textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 16%,transparent);
+}
+.ios-text-prompt-field textarea{min-height:122px;resize:none}
+.ios-text-prompt-actions{
+  border-top:1px solid var(--line);
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.ios-text-prompt-actions button{
+  min-height:52px;border:0;background:transparent;font-size:16px;
+}
+.ios-text-prompt-actions button:first-child{
+  color:var(--secondary);border-right:1px solid var(--line)
+}
+.ios-text-prompt-actions button:last-child{
+  color:var(--accent);font-weight:700
+}
+
+
+/* Tela inicial visível enquanto o JavaScript carrega. */
+.boot-message {
+  min-height:100dvh;display:grid;place-items:center;padding:24px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  background:#F2F2F6;color:#000;text-align:center;
+}
+@media (prefers-color-scheme:dark) {
+  .boot-message {background:#000;color:#fff}
+}

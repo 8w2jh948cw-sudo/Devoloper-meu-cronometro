@@ -1,0 +1,20 @@
+{
+  "name": "Cronômetro Arquivo 0.8.4",
+  "short_name": "Arquivo 0.8.4",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F2F6",
+  "theme_color": "#F2F2F6",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "description": "Cronômetro PWA v0.8.1",
+  "id": "./arquivo-0.8.4"
+}
